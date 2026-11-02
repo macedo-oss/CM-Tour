@@ -1,0 +1,1220 @@
+<title>CM Tour APP</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: lista de viagens à esquerda, linha do tempo por dia no centro; no celular a lista vira uma faixa horizontal. */
+:root {
+  --bg: #eef2f3;
+  --surface: #ffffff;
+  --surface-2: #e4ebed;
+  --fg: #10262e;
+  --muted: #5a6f77;
+  --line: #d3dde0;
+  --accent: #0b6e8a;
+  --accent-fg: #ffffff;
+  --accent-soft: #d9eef4;
+  --danger: #b3382c;
+  --c-voo: #3a5bc7;
+  --c-cruzeiro: #0a8fb0;
+  --c-hospedagem: #7a4fb0;
+  --c-transporte: #2b8a6e;
+  --c-passeio: #c2691c;
+  --c-refeicao: #b8892a;
+  --c-outro: #5a6f77;
+  --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1a1f; --surface: #14262d; --surface-2: #1c343d; --fg: #e5eff2; --muted: #8fa6ae;
+    --line: #27424c; --accent: #4cc2e0; --accent-fg: #06222b; --accent-soft: #163c48; --danger: #ef7f72;
+    --c-voo: #8aa4f5; --c-cruzeiro: #4cc8e8; --c-hospedagem: #b99be3; --c-transporte: #5fcfaa; --c-passeio: #f0a45e; --c-refeicao: #e3bd63; --c-outro: #8fa6ae;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1a1f; --surface: #14262d; --surface-2: #1c343d; --fg: #e5eff2; --muted: #8fa6ae;
+  --line: #27424c; --accent: #4cc2e0; --accent-fg: #06222b; --accent-soft: #163c48; --danger: #ef7f72;
+  --c-voo: #8aa4f5; --c-cruzeiro: #4cc8e8; --c-hospedagem: #b99be3; --c-transporte: #5fcfaa; --c-passeio: #f0a45e; --c-refeicao: #e3bd63; --c-outro: #8fa6ae;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font-body);
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.app { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; align-items: start; }
+.brand { font: 700 22px/1 var(--font-display); letter-spacing: -0.01em; margin: 0 0 16px; }
+.brand small { display: block; font: 400 12px var(--font-body); color: var(--muted); letter-spacing: 0; margin-top: 6px; }
+.logo { display: block; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; margin-bottom: 10px; line-height: 0; box-shadow: 0 0 0 1px var(--line); }
+.side { position: sticky; top: 16px; min-width: 0; }
+.trips { display: flex; flex-direction: column; gap: 6px; }
+.trip-btn { text-align: left; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 8px 10px; min-width: 0; display: flex; gap: 10px; align-items: center; }
+.trip-btn:hover { background: var(--surface-2); }
+.trip-btn[aria-current="true"] { background: var(--surface); border-color: var(--line); }
+.trip-btn b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.trip-btn span { font-size: 12.5px; color: var(--muted); }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; font-weight: 500; text-decoration: none; color: var(--fg); display: inline-block; }
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .6; cursor: default; }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.danger { color: var(--danger); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--fg); background: var(--surface-2); }
+.btn.done { color: var(--c-transporte); }
+.new-trip { margin-top: 12px; width: 100%; border-style: dashed; background: transparent; }
+.together { margin-top: 18px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; color: var(--muted); }
+.together b { color: var(--fg); display: block; margin-bottom: 4px; font-size: 14px; }
+.sync { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.main { min-width: 0; }
+.thumb { width: 74px; height: 74px; border-radius: 14px; overflow: hidden; margin-top: 10px; line-height: 0; box-shadow: 0 0 0 1px var(--line); background: var(--surface-2); }
+.thumb.sm { width: 40px; height: 40px; margin: 0; border-radius: 10px; flex: none; }
+.logo svg, .thumb svg, .thumb img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.banner { position: relative; border-radius: 16px; overflow: hidden; margin-bottom: 18px; line-height: 0; box-shadow: 0 0 0 1px var(--line); }
+.banner svg { width: 100%; height: clamp(130px, 24vw, 230px); display: block; }
+.stamp { position: absolute; top: 12px; right: 14px; width: 92px; height: 92px; border-radius: 50%; border: 3px double #c0392b; color: #c0392b; background: rgba(255, 255, 255, .86); display: grid; place-content: center; text-align: center; transform: rotate(-8deg); font: 700 11px/1.1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; }
+.stamp b { display: block; font-size: 30px; letter-spacing: 0; line-height: 1.05; }
+.hero { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 18px; }
+.hero h1 { font: 700 clamp(28px, 5vw, 44px)/1.05 var(--font-display); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.hero .dest { color: var(--muted); margin: 6px 0 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 16px; }
+.fact { min-width: 0; }
+.fact dt { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.fact dd { margin: 2px 0 0; font: 500 16px var(--font-mono); font-variant-numeric: tabular-nums; }
+.tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin-bottom: 22px; }
+.tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 64px; padding: 10px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; color: var(--fg); font-weight: 600; font-size: 13px; line-height: 1.2; text-align: center; transition: border-color .15s, background .15s; }
+.tab:hover { border-color: var(--accent); }
+.tab svg { width: 20px; height: 20px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.tab[aria-selected="true"] svg { stroke: var(--accent-fg); }
+.tab small { position: absolute; top: 6px; right: 6px; font-size: 10.5px; font-weight: 600; background: var(--surface-2); color: var(--muted); border-radius: 99px; padding: 0 6px; line-height: 16px; }
+.tab[aria-selected="true"] small { background: rgba(255, 255, 255, .25); color: var(--accent-fg); }
+@media (max-width: 420px) {
+  .tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .tab { min-height: 60px; font-size: 12px; padding: 8px 4px; }
+  .tab small { top: 4px; right: 4px; }
+}
+.eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 600; }
+.today { display: flex; gap: 14px; align-items: center; background: var(--accent-soft); border-radius: 14px; padding: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.today .thumb { margin: 0; width: 64px; height: 64px; flex: none; }
+.today-text { flex: 1; min-width: 180px; }
+.today-text b { display: block; font-size: 16px; overflow-wrap: anywhere; }
+.today-text span { font-size: 13px; color: var(--muted); }
+.postcards { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 22px; scroll-snap-type: x mandatory; }
+.postcard { flex: none; width: 150px; border: 0; padding: 0; background: var(--surface); border-radius: 12px; overflow: hidden; text-align: left; box-shadow: 0 0 0 1px var(--line); scroll-snap-align: start; transition: transform .15s; }
+.postcard:hover { transform: translateY(-2px) rotate(-1deg); }
+.postcard img { width: 100%; height: 96px; object-fit: cover; display: block; }
+.postcard div { padding: 6px 9px 8px; }
+.postcard b { display: block; font-size: 13px; line-height: 1.25; }
+.postcard span { font: 500 11.5px var(--font-mono); color: var(--muted); }
+.day { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 0 18px; margin-bottom: 26px; scroll-margin-top: 16px; }
+.day-num { font: 700 34px/1 var(--font-display); }
+.day-wd { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.day-body { min-width: 0; border-left: 2px solid var(--line); padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.day.is-today .day-body { border-left-color: var(--accent); }
+.day-title { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+.badge { background: var(--accent); color: var(--accent-fg); border-radius: 99px; padding: 0 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 12px; align-items: start; }
+.item .time { font: 500 13px var(--font-mono); color: var(--muted); padding-top: 2px; }
+.item h3 { margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.meta { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.notes { font-size: 13px; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chip { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--cat); border: 1px solid var(--cat); border-radius: 99px; padding: 0 8px; margin-right: 6px; vertical-align: 1px; }
+.ic { width: 12px; height: 12px; vertical-align: -1px; margin-right: 4px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.item-actions { grid-column: 2 / -1; display: flex; gap: 4px; margin-top: 2px; flex-wrap: wrap; }
+.add-row { align-self: flex-start; }
+.empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; padding: 24px; text-align: center; }
+.example-note { background: var(--surface-2); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 18px; }
+.panel h2 { font: 700 18px var(--font-display); margin: 0 0 12px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.panel-head p { margin: 0; color: var(--muted); font-size: 14px; max-width: 60ch; }
+.bar { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.cat-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 100px; gap: 12px; align-items: center; margin-top: 10px; font-size: 14px; }
+.cat-row .mono { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.over { color: var(--danger); }
+.led { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.led:last-child { border-bottom: 0; }
+.led-main { min-width: 0; }
+.led-main b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.led-main span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.led .mono { font-family: var(--font-mono); font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.check { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.check:last-child { border-bottom: 0; }
+.check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.check label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.check.done label { text-decoration: line-through; color: var(--muted); }
+.by { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.inline-form { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.inline-form input { flex: 1 1 200px; min-width: 0; }
+.inline-form select { flex: 0 1 220px; width: auto; }
+.progress { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 8px; }
+.progress i { display: block; height: 100%; background: var(--accent); }
+.ideas { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.idea { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.idea h3 { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.idea .item-actions { margin-top: auto; padding-top: 6px; }
+.credits { font-size: 12px; color: var(--muted); margin-top: 28px; border-top: 1px solid var(--line); padding-top: 12px; }
+.credits a { color: var(--muted); }
+input, select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+dialog { background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(540px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgba(5, 15, 20, .55); }
+.form { padding: 20px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+.form h2 { grid-column: 1 / -1; margin: 0; font: 700 20px var(--font-display); }
+.form label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 500; min-width: 0; }
+.form .full { grid-column: 1 / -1; }
+.form .actions { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.form dl { grid-column: 1 / -1; margin: 0; display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+.form dt { color: var(--muted); }
+.form dd { margin: 0; overflow-wrap: anywhere; }
+.msg { grid-column: 1 / -1; font-size: 13px; color: var(--danger); margin: 0; }
+.msg.ok { color: var(--c-transporte); }
+body.visitor .new-trip, body.visitor .together, body.visitor .docs, body.visitor .files .x, body.visitor .add-row, body.visitor #todo-form, body.visitor #pack-form,
+body.visitor [data-act="edit-item"], body.visitor [data-act="attach"], body.visitor [data-act="ask-del"], body.visitor [data-act="ask-del-trip"], body.visitor [data-act="edit-trip"],
+body.visitor [data-act="cal"], body.visitor [data-act="new-person"], body.visitor [data-act="edit-person"], body.visitor [data-act="person-photo"], body.visitor [data-act="me-person"],
+body.visitor [data-act="new-idea"], body.visitor [data-act="edit-idea"], body.visitor [data-act="idea-to-item"], body.visitor [data-act="port-to-item"], body.visitor [data-act="dine-to-item"],
+body.visitor [data-act="del-check"] { display: none !important; }
+body.visitor .check input, body.visitor [data-act="show-to-item"] { pointer-events: none; }
+.wx { display: inline-flex; align-items: center; gap: 4px; font: 500 12.5px var(--font-mono); color: var(--fg); background: var(--surface-2); border-radius: 99px; padding: 1px 9px; flex-wrap: wrap; }
+.wx svg { color: var(--accent); }
+.wx i { font: italic 400 11px var(--font-body); color: var(--muted); margin-left: 4px; }
+.airline { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.al-logo { height: 26px; width: auto; background: #fff; border-radius: 6px; padding: 3px 7px; box-shadow: 0 0 0 1px var(--line); }
+.al-badge { display: inline-block; background: #0033a0; color: #fff; font: 700 11px/1 var(--font-body); letter-spacing: .1em; padding: 7px 9px; border-radius: 6px; }
+.airline span { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.file { display: inline-flex; align-items: center; gap: 2px; background: var(--surface-2); border-radius: 8px; padding: 2px 4px 2px 8px; font-size: 13px; max-width: 100%; }
+.file a { color: var(--fg); text-decoration: none; overflow-wrap: anywhere; }
+.file a:hover { text-decoration: underline; }
+.file .x { border: 0; background: none; color: var(--muted); font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+.file .x:hover { background: var(--line); color: var(--fg); }
+.av { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font: 600 10px/1 var(--font-body); letter-spacing: .02em; flex: none; }
+.av.big { width: 64px; height: 64px; font-size: 20px; }
+.av { overflow: hidden; }
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.av.big { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--pc, var(--line)); }
+.avs { display: inline-flex; gap: 2px; margin-top: 6px; }
+.check .avs { margin-top: 0; }
+.pbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.pchip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 3px 12px 3px 4px; font-size: 13px; font-weight: 500; }
+.pchip:first-child { padding-left: 12px; }
+.pchip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.person { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.person-head { display: flex; gap: 12px; align-items: center; }
+.person-head b { font: 700 18px var(--font-display); display: block; }
+.person-head span { font-size: 13px; color: var(--muted); }
+.person ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13.5px; }
+.person li { overflow-wrap: anywhere; }
+.flag { font-size: 13px; color: var(--danger); }
+.flag.ok { color: var(--c-transporte); }
+fieldset.who { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+fieldset.who legend { font-size: 12px; color: var(--muted); font-weight: 500; padding: 0 4px; }
+.form fieldset.who label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg); }
+.form fieldset.who input { width: auto; }
+.port { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 18px; }
+.port-head { display: grid; grid-template-columns: 180px minmax(0, 1fr); }
+.port-head img { width: 100%; height: 100%; min-height: 130px; object-fit: cover; display: block; }
+.port-info { padding: 14px 16px; min-width: 0; }
+.port-info h2 { font: 700 22px var(--font-display); margin: 2px 0 4px; }
+.port-body { padding: 4px 16px 16px; display: grid; gap: 10px; }
+.sugg { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 4px; }
+.sugg h3 { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11.5px; border-radius: 99px; padding: 1px 8px; background: var(--surface-2); color: var(--muted); font-weight: 500; }
+.tag.facil { background: color-mix(in srgb, var(--c-transporte) 18%, transparent); color: var(--c-transporte); }
+.tag.moderado { background: color-mix(in srgb, var(--c-passeio) 18%, transparent); color: var(--c-passeio); }
+.tag.puxado { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+.tip { font-size: 13.5px; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.src { font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+.src a { color: var(--muted); }
+.rest { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.rcard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rcard h3 { margin: 0; font: 700 17px var(--font-display); }
+.rcard details summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; }
+.rcard ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; display: grid; gap: 3px; }
+.sec-title { font: 700 18px var(--font-display); margin: 4px 0 10px; }
+.docs { display: grid; gap: 6px; }
+.docs-title { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); border-radius: 10px; padding: 10px 16px; font-size: 14px; z-index: 20; max-width: calc(100vw - 32px); }
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .side { position: static; }
+  .trips { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .trip-btn { flex: none; max-width: 240px; border-color: var(--line); }
+  .new-trip { width: auto; margin-top: 8px; }
+  .together { display: none; }
+  .day { grid-template-columns: minmax(0, 1fr); }
+  .day-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .thumb { width: 44px; height: 44px; margin-top: 0; }
+  .thumb.sm { width: 36px; height: 36px; }
+  .stamp { width: 70px; height: 70px; top: 8px; right: 8px; font-size: 9px; }
+  .stamp b { font-size: 22px; }
+  .cat-row { grid-template-columns: 90px minmax(0, 1fr) 84px; }
+  .port-head { grid-template-columns: minmax(0, 1fr); }
+  .port-head img { height: 150px; }
+  .form { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+
+<div class="app">
+  <aside class="side">
+    <h1 class="brand"><img class="logo" id="logo" src="fotos/logo-cm.png" alt="CM Tour APP" width="56" height="56">CM Tour APP<small>Roteiros, mala, ideias e pendências</small></h1>
+    <nav class="trips" id="trips" aria-label="Viagens"></nav>
+    <button class="btn new-trip" data-act="new-trip">+ Nova viagem</button>
+    <div class="together" id="together">
+      <b>Viajando juntos</b>
+      Para a família ver o roteiro e marcar mala e pendências, use o menu Compartilhar desta página e dê a cada pessoa acesso para editar.
+      <div id="me" style="margin-top:6px"></div>
+    </div>
+    <div class="sync" id="sync"></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+
+<dialog id="dlg"><form class="form" id="form" method="dialog"></form></dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  var CATS = { voo: "Voo", hospedagem: "Hospedagem", transporte: "Transporte", cruzeiro: "Cruzeiro", passeio: "Passeio", refeicao: "Refeição", outro: "Outro" };
+  var TZS = [["America/Sao_Paulo", "Brasília"], ["America/Chicago", "Centro dos EUA (Minnesota, Houston)"], ["America/New_York", "Leste dos EUA (Nova York)"], ["America/Puerto_Rico", "Caribe (AST)"], ["Europe/Lisbon", "Portugal"]];
+  var PACK_GROUPS = ["Documentos", "Roupas", "Saúde e crianças", "Eletrônicos", "Geral"];
+  var KEY = "caderno-viagem-v1";
+  var state = null, tab = "roteiro", db = null, user = null, meId = null, saveTimer = null, syncMsg = "";
+  var confirmDel = null, scrolledToday = false, names = {}, askedNames = {}, pf = "", visitor = false;
+  try { pf = localStorage.getItem("caderno-pf") || ""; } catch (e) {}
+  var COLORS = ["#0b6e8a", "#c2691c", "#7a4fb0", "#2b8a6e", "#b3382c", "#3a5bc7", "#8a6d1c"];
+  var DOC_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4"/></svg>';
+
+  /* ---------- viajantes ---------- */
+  function person(t, id) { return t.people.find(function (p) { return p.id === id; }); }
+  function initials(n) { var w = n.trim().split(/\s+/); return (w[0][0] + (w[1] ? w[1][0] : "")).toUpperCase(); }
+  function firstName(n) { return n.trim().split(/\s+/)[0]; }
+  function av(p, big) {
+    return '<span class="av' + (big ? " big" : "") + '" style="background:' + esc(p.color) + ";--pc:" + esc(p.color) + '" title="' + esc(p.name) + '">' +
+      (p.photo ? '<img src="' + esc(p.photo) + '" alt="' + esc(p.name) + '">' : esc(initials(p.name))) + "</span>";
+  }
+  function upload(accept, done) {
+    var inp = document.createElement("input");
+    inp.type = "file"; inp.accept = accept;
+    inp.onchange = function () {
+      var f = inp.files[0]; if (!f) return;
+      toast("Enviando " + f.name + "…");
+      var c = window.claude;
+      (c && c.use ? c.use("assets") : Promise.resolve(null)).then(function (a) {
+        if (!a) throw { code: "unavailable" };
+        return a.upload(f);
+      }).then(function (r) { done(r, f); }).catch(function (e) {
+        toast(e && e.code === "unavailable" ? "Para enviar arquivos é preciso ter acesso de edição à página." : "Não foi possível enviar o arquivo" + (e && e.message ? ": " + e.message : "."));
+      });
+    };
+    inp.click();
+  }
+  function avatars(ids) {
+    var t = cur(); if (!t || !ids || !ids.length) return "";
+    var ps = ids.map(function (id) { return person(t, id); }).filter(Boolean);
+    return ps.length ? '<span class="avs">' + ps.map(function (p) { return av(p); }).join("") + "</span>" : "";
+  }
+  function goes(i, id) { return !i.who || !i.who.length || i.who.indexOf(id) >= 0; }
+  function inPf(i) { return !pf || goes(i, pf); }
+  function mineOnly(x) { return !pf || !x.who || x.who === pf; }
+  function peopleBar(t) {
+    if (!t.people.length) return "";
+    if (pf && !person(t, pf)) pf = "";
+    return '<div class="pbar" role="group" aria-label="Filtrar por viajante"><button class="pchip" data-act="pf" data-id="" aria-pressed="' + !pf + '">Todos</button>' +
+      t.people.map(function (p) { return '<button class="pchip" data-act="pf" data-id="' + p.id + '" aria-pressed="' + (pf === p.id) + '">' + av(p) + esc(firstName(p.name)) + "</button>"; }).join("") + "</div>";
+  }
+  function whoSelect(id) {
+    var t = cur(); if (!t.people.length) return '<input type="hidden" id="' + id + '" value="">';
+    return '<select id="' + id + '" aria-label="De quem"><option value="">Todos</option>' + t.people.map(function (p) { return '<option value="' + p.id + '"' + (pf === p.id ? " selected" : "") + ">" + esc(firstName(p.name)) + "</option>"; }).join("") + "</select>";
+  }
+  function whoField(sel) {
+    var t = cur(); if (!t.people.length) return "";
+    var all = !sel || !sel.length;
+    return '<fieldset class="who full"><legend>Quem vai</legend>' + t.people.map(function (p) {
+      return '<label><input type="checkbox" name="who" value="' + p.id + '"' + (all || sel.indexOf(p.id) >= 0 ? " checked" : "") + ">" + esc(firstName(p.name)) + "</label>";
+    }).join("") + "</fieldset>";
+  }
+  function checkedWho() {
+    var t = cur(), ids = Array.prototype.map.call(document.querySelectorAll('input[name="who"]:checked'), function (x) { return x.value; });
+    return ids.length === t.people.length ? [] : ids;
+  }
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg; el.hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(function () { el.hidden = true; }, 4000);
+  }
+  function filesHtml(i) {
+    if (!i.files || !i.files.length) return "";
+    return '<div class="files">' + i.files.map(function (f) {
+      var k = "f:" + i.id + ":" + f.id;
+      return '<span class="file"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + DOC_ICON + esc(f.name) + "</a>" +
+        (confirmDel === k ? '<button class="btn small danger" data-act="del-file" data-id="' + i.id + '" data-file="' + esc(f.id) + '">Remover</button>' : '<button class="x" data-act="ask-del" data-id="' + k + '" aria-label="Remover anexo ' + esc(f.name) + '">×</button>') + "</span>";
+    }).join("") + "</div>";
+  }
+  function attach(item) {
+    upload("application/pdf,image/*,.jsonl,application/jsonl,application/x-ndjson", function (r, f) {
+      item.files = item.files || [];
+      item.files.push({ id: r.id, url: r.url, name: f.name });
+      save(); render(); toast("Anexado: " + f.name);
+    });
+  }
+  function personPhoto(p) {
+    upload("image/*", function (r) { p.photo = r.url; save(); render(); toast("Foto de " + firstName(p.name) + " atualizada."); });
+  }
+  function sixMonthsAfter(d) { var x = new Date(parse(d)); x.setUTCMonth(x.getUTCMonth() + 6); return iso(x.getTime()); }
+
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function brl(n) { return (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+  function parse(d) { var p = d.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]); }
+  function iso(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  function fmt(d, o) { return new Date(parse(d)).toLocaleDateString("pt-BR", Object.assign({ timeZone: "UTC" }, o)); }
+  function today() { var n = new Date(); return iso(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())); }
+  function nowHM() { var n = new Date(); return String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0"); }
+  function byDate(a, b) { return ((a.date || "9") + (a.time || "99")).localeCompare((b.date || "9") + (b.time || "99")); }
+  function tzName(z) { var f = TZS.find(function (x) { return x[0] === z; }); return f ? f[1] : z || "Brasília"; }
+
+  /* ---------- fotos (Wikimedia Commons) ---------- */
+  var PHOTOS = [
+    { k: "nasa", re: /space center|nasa/, name: "Space Center Houston", by: "Shujianyang", lic: "CC BY 4.0", page: "Space_Center_Houston_2025.08.jpg", prio: 1 },
+    { k: "stpaul", re: /st\.? paul|minnesota|minneapolis/, name: "St. Paul, Minnesota", by: "McGhiever", lic: "CC BY-SA 3.0", page: "St_Paul_Cathedral_2012.jpg", prio: 3 },
+    { k: "familia", re: /sobrinha|carolina/, name: "Com a Carolina", own: true, prio: 0 },
+    { k: "nyc", re: /nova york|new york|newark|manhattan/, name: "Nova York", by: "Dllu", lic: "CC BY-SA 4.0", page: "View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_(cropped).jpg", prio: 4 },
+    { k: "ship", re: /norwegian|bliss|embarque|desembarque/, name: "Norwegian Bliss", by: "Sea Cow", lic: "CC BY-SA 4.0", page: "Norwegian_Bliss_SE.jpg", prio: 2 },
+    { k: "puertoplata", re: /puerto plata/, name: "Puerto Plata", by: "scubabix", lic: "CC BY 2.0", page: "Downtown_Puerto_Plata_Dominican_Republic_Architecture.jpg", prio: 1 },
+    { k: "sanjuan", re: /san juan/, name: "San Juan", by: "Farragutful", lic: "CC BY-SA 3.0", page: "2013_Old_San_Juan_01.JPG", prio: 1 },
+    { k: "basseterre", re: /basseterre|st\.? kitts/, name: "Basseterre, St. Kitts", by: "giggel", lic: "CC BY 3.0", page: "St._Kitts,_Karibik_-_Marina_in_Basseterre_-_panoramio.jpg", prio: 1 },
+    { k: "tortola", re: /tortola/, name: "Tortola", by: "Henry A-W", lic: "CC BY-SA 3.0", page: "Roadtown,_Tortola.jpg", prio: 1 },
+    { k: "philipsburg", re: /philipsburg|st\.? maarten/, name: "Philipsburg, St. Maarten", by: "Clavius66", lic: "CC BY-SA 3.0", page: "Philipsburg_and_the_Great_Bay,_Sint_Maarten,_Caribbean.jpg", prio: 1 },
+    { k: "stthomas", re: /st\.? thomas|charlotte amalie/, name: "St. Thomas", by: "Gruepig", lic: "CC BY-SA 4.0", page: "FortChristian.jpg", prio: 1 }
+  ];
+  function photoByKey(k) { return PHOTOS.find(function (p) { return p.k === k; }); }
+  function matchPhoto(text) {
+    text = text.toLowerCase();
+    return PHOTOS.slice().sort(function (a, b) { return a.prio - b.prio; }).find(function (p) { return p.re.test(text); }) || null;
+  }
+  function img(p) { return '<img src="fotos/' + p.k + '.jpg" alt="' + esc(p.name) + '" loading="lazy">'; }
+
+  /* ---------- ilustrações ---------- */
+  var ICONS = {
+    voo: '<path fill="currentColor" stroke="none" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>',
+    hospedagem: '<path d="M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7M3 15h18M7 9V7h4v2"/>',
+    transporte: '<path d="M5 4h14a1 1 0 0 1 1 1v11H4V5a1 1 0 0 1 1-1zM4 11h16M7 19v-3M17 19v-3"/>',
+    passeio: '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>',
+    refeicao: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/>',
+    cruzeiro: '<path d="M3 17l2 3h14l2-3zM6 17v-6h12v6M9 11V7h6v4"/>',
+    outro: '<circle cx="12" cy="12" r="2"/><circle cx="5" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+  };
+  var TAB_ICONS = {
+    roteiro: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    viajantes: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+    paradas: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+    restaurantes: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/>',
+    broadway: '<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M12 9.5l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z"/>',
+    ideias: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+    mala: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/>',
+    pendencias: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+    clima: '<path d="M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18z"/><path d="M12 3v1.5M5.6 5.6l1 1M18.4 5.6l-1 1"/>',
+    orcamento: '<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.5-.8-1.4-1.2-2.5-1.2-1.4 0-2.5.8-2.5 1.9 0 2.6 5 1.4 5 4.1 0 1.1-1.1 2-2.5 2-1.1 0-2.1-.5-2.6-1.3M12 6.5V8M12 16v1.5"/>'
+  };
+  function icon(c) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[c] || ICONS.outro) + "</svg>"; }
+
+  function wrap(bg, inner) { return '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="100" height="100" fill="' + bg + '"/>' + inner + "</svg>"; }
+  function windows(b) {
+    var o = "";
+    for (var y = b[1] + 4; y < 96; y += 6) for (var x = b[0] + 2; x + 3 < b[0] + b[2]; x += 4) if ((x * 7 + y * 13) % 5 < 2) o += '<rect x="' + x + '" y="' + y + '" width="1.6" height="2.2" fill="#ffd166"/>';
+    return o;
+  }
+  var BLD = [[6, 60, 12, 40], [16, 50, 10, 50], [26, 64, 10, 36], [36, 44, 12, 56], [64, 56, 12, 44], [76, 48, 10, 52], [86, 62, 12, 38], [50, 42, 12, 58]];
+  function skyline() {
+    var o = "";
+    BLD.forEach(function (b) { o += '<rect x="' + b[0] + '" y="' + b[1] + '" width="' + b[2] + '" height="' + b[3] + '" fill="#1d2b4f"/>' + windows(b); });
+    return o + '<rect x="52.5" y="34" width="7" height="8" fill="#1d2b4f"/><rect x="54.5" y="27" width="3" height="7" fill="#1d2b4f"/><rect x="55.5" y="18" width="1" height="9" fill="#1d2b4f"/>';
+  }
+  function cathedral() {
+    var o = '<rect x="34" y="60" width="32" height="20" fill="#d8c9ae"/><path d="M36 60a14 14 0 0 1 28 0z" fill="#3f9b84"/><rect x="47" y="40" width="6" height="7" fill="#d8c9ae"/><path d="M47 40l3-6 3 6z" fill="#3f9b84"/>';
+    [38, 43, 54.5, 59.5].forEach(function (x) { o += '<rect x="' + x + '" y="64" width="2.5" height="16" fill="#efe6d2"/>'; });
+    return o + '<path d="M47 80v-8a3 3 0 0 1 6 0v8z" fill="#7a5a3a"/>';
+  }
+  function pine(x, y, s) { return '<g transform="translate(' + x + " " + y + ") scale(" + s + ')"><rect x="-1.5" y="14" width="3" height="6" fill="#5b3b24"/><path d="M0-14L9 2H-9z" fill="#1f6b4f"/><path d="M0-6L11 12H-11z" fill="#1f6b4f"/><path d="M0-14L4-7H-4z" fill="#fff"/></g>'; }
+  function flakes() {
+    var o = "";
+    [[12, 16], [30, 10], [48, 22], [70, 14], [88, 24], [20, 40], [80, 44], [58, 8]].forEach(function (p) { o += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.2" fill="#fff"/>'; });
+    return o;
+  }
+  function shipArt() {
+    var o = '<polygon points="14,62 86,62 80,76 22,76" fill="#14315a"/><polygon points="15.5,64 84.5,64 83.5,67 16.5,67" fill="#ff6f61"/><rect x="22" y="50" width="56" height="12" fill="#fff"/><rect x="30" y="41" width="36" height="9" fill="#eef3f6"/><rect x="40" y="34" width="18" height="7" fill="#fff"/><rect x="55" y="26" width="7" height="9" fill="#1aa6c9"/>';
+    for (var x = 25; x < 76; x += 5) o += '<rect x="' + x + '" y="54.5" width="2.8" height="2.6" fill="#3a6ea5"/>';
+    for (var x2 = 33; x2 < 64; x2 += 5) o += '<rect x="' + x2 + '" y="44" width="2.8" height="2.6" fill="#3a6ea5"/>';
+    return o;
+  }
+  function planeArt() {
+    var o = '<g transform="rotate(-14 50 50)"><polygon points="48,47 60,47 42,72 34,72" fill="#dfe8ed"/><rect x="22" y="43" width="58" height="10" rx="5" fill="#fff"/><polygon points="25,45 33,45 25,32 20,32" fill="#e4572e"/><polygon points="50,46 60,46 54,30 47,30" fill="#c5d2d9"/>';
+    for (var x = 36; x < 72; x += 6) o += '<circle cx="' + x + '" cy="47.5" r="1.4" fill="#2b5d7a"/>';
+    return o + "</g>";
+  }
+  function waves(y, fill) { return '<path d="M0 ' + y + 'q8-5 16 0t16 0t16 0t16 0t16 0t16 0t16 0V100H0z" fill="' + fill + '"/>'; }
+  function palm(x, y, s) {
+    return '<g transform="translate(' + x + " " + y + ") scale(" + s + ')"><path d="M0 0Q6-30 2-60" stroke="#8a5a2b" stroke-width="5" fill="none"/><g fill="#2f9e5b"><ellipse cx="-16" cy="-62" rx="18" ry="5" transform="rotate(-25 2 -60)"/><ellipse cx="20" cy="-62" rx="18" ry="5" transform="rotate(25 2 -60)"/><ellipse cx="2" cy="-72" rx="5" ry="16"/><ellipse cx="-12" cy="-54" rx="16" ry="5" transform="rotate(30 2 -60)"/><ellipse cx="16" cy="-54" rx="16" ry="5" transform="rotate(-30 2 -60)"/></g><circle cx="0" cy="-58" r="3" fill="#6b3f1d"/></g>';
+  }
+  var SC = {
+    plane: function () { return wrap("#79c4ee", '<ellipse cx="24" cy="76" rx="22" ry="8" fill="#fff" opacity=".9"/><ellipse cx="80" cy="26" rx="16" ry="6" fill="#fff" opacity=".9"/><path d="M0 64Q14 60 24 54" stroke="#fff" stroke-width="2.2" fill="none" opacity=".75"/>' + planeArt()); },
+    ship: function () { return wrap("#8fd3f4", '<circle cx="80" cy="22" r="10" fill="#ffd23f"/><rect y="66" width="100" height="34" fill="#1b7fa8"/>' + shipArt() + waves(76, "#146e96")); },
+    sea: function () { return wrap("#9fdcf6", '<circle cx="50" cy="30" r="14" fill="#ffd23f"/><path d="M16 20q3-4 6 0q3-4 6 0M70 14q3-4 6 0q3-4 6 0" stroke="#fff" stroke-width="1.6" fill="none"/><rect y="62" width="100" height="38" fill="#1b7fa8"/><g transform="translate(24 30) scale(.52)">' + shipArt() + "</g>" + waves(70, "#146e96") + waves(84, "#0f5a7c")); },
+    nyc: function () { return wrap("#6a5acd", '<rect y="25" width="100" height="75" fill="#d9778f"/><rect y="45" width="100" height="55" fill="#ff9e6d"/><circle cx="50" cy="62" r="16" fill="#ffd166"/>' + skyline() + waves(92, "#2b3a6b")); },
+    minnesota: function () { return wrap("#a9cdea", flakes() + '<rect y="78" width="100" height="22" fill="#f4f8fb"/>' + cathedral() + pine(14, 62, 1) + pine(88, 60, 1.1) + pine(78, 66, .8)); },
+    pin: function () { return wrap("#cfe8dc", '<path d="M14 78Q40 18 84 42" stroke="#e4572e" stroke-width="2.5" stroke-dasharray="4 4" fill="none"/><circle cx="14" cy="78" r="3.5" fill="#14315a"/><path d="M84 42c-6-7-9-11-9-16a9 9 0 0 1 18 0c0 5-3 9-9 16z" fill="#e4572e"/><circle cx="84" cy="26" r="3.5" fill="#fff"/>'); }
+  };
+  var SCENE_NAME = { ship: "No porto", sea: "Em alto-mar", plane: "Dia de voo", minnesota: "Minnesota · com a Carolina", nyc: "Nova York", houston: "Houston", pin: "A caminho" };
+  var SCENE_PHOTO = { ship: "ship", minnesota: "familia", nyc: "nyc", houston: "nasa" };
+  SC.houston = SC.plane;
+  function scene(n) { return (SC[n] || SC.pin)(); }
+  function sceneByText(s) {
+    s = s.toLowerCase();
+    if (/houston|webster|pearland|space center|\biah\b/.test(s)) return "houston";
+    if (/nova york|new york|newark|ewr/.test(s)) return "nyc";
+    if (/st\.? paul|minnesota|minneapolis|msp/.test(s)) return "minnesota";
+    return null;
+  }
+  function itemText(i) { return i.title + " " + i.place; }
+  function tripText(t) { return (t.name + " " + t.dest + " " + t.items.map(itemText).join(" ")).toLowerCase(); }
+  function isCruise(t) { return t.items.some(function (i) { return i.cat === "cruzeiro"; }) || /cruzeiro|norwegian/.test(tripText(t)); }
+  function tripScene(t) { return isCruise(t) ? "ship" : sceneByText(tripText(t)) || "pin"; }
+  function dayScene(t, k, items, cs, ce) {
+    if (items.some(function (i) { return i.cat === "cruzeiro"; })) return "ship";
+    if (cs && ce && k > cs && k < ce) return "sea";
+    var r = sceneByText(items.filter(function (i) { return i.cat !== "voo"; }).map(itemText).join(" "));
+    if (r) return r;
+    if (items.some(function (i) { return i.cat === "voo"; })) return "plane";
+    var hs = t.items.filter(function (i) { return i.cat === "hospedagem" && i.date; }).sort(byDate);
+    for (var j = 0; j < hs.length - 1; j++) if (hs[j].date < k && hs[j + 1].date > k) { r = sceneByText(itemText(hs[j])); if (r) return r; }
+    return "pin";
+  }
+  function dayThumb(sc, items) {
+    if (sc === "minnesota") return img(photoByKey("familia"));
+    var p = matchPhoto(items.filter(function (i) { return i.cat !== "voo"; }).map(itemText).join(" "));
+    if (!p && SCENE_PHOTO[sc]) p = photoByKey(SCENE_PHOTO[sc]);
+    return p ? img(p) : scene(sc);
+  }
+  function banner(t) {
+    var s = tripText(t), cruise = isCruise(t);
+    var ny = /nova york|new york|newark/.test(s), mn = /st\.? paul|minnesota|minneapolis/.test(s), none = !cruise && !ny && !mn;
+    var o = '<svg viewBox="0 0 1000 240" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Ilustração da viagem"><defs><linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb8ee"/><stop offset="1" stop-color="#d6f0fb"/></linearGradient></defs><rect width="1000" height="240" fill="url(#hsky)"/>';
+    o += '<circle cx="930" cy="60" r="52" fill="#ffd23f" opacity=".3"/><circle cx="930" cy="60" r="32" fill="#ffd23f"/>';
+    o += '<g fill="#fff" opacity=".9"><ellipse cx="150" cy="44" rx="60" ry="14"/><ellipse cx="190" cy="36" rx="34" ry="12"/><ellipse cx="560" cy="30" rx="50" ry="12"/><ellipse cx="700" cy="84" rx="44" ry="11"/></g>';
+    o += none ? '<path d="M0 170Q150 120 320 160T640 150T1000 165V240H0z" fill="#58b368"/>' : '<rect y="170" width="1000" height="70" fill="#1b7fa8"/>';
+    o += '<path d="M40 150Q400 -30 790 40" stroke="#fff" stroke-width="3" stroke-dasharray="10 9" fill="none" opacity=".85"/>';
+    o += '<g transform="translate(775 8) scale(.62)">' + planeArt() + "</g>";
+    if (mn) o += '<path d="M0 190V152Q110 138 250 160L290 190z" fill="#f4f8fb"/><g transform="translate(40 45) scale(1.6)">' + cathedral() + pine(14, 62, 1) + pine(88, 60, 1.1) + "</g>";
+    if (ny) o += '<rect x="290" y="168" width="170" height="8" fill="#1d2b4f"/><g transform="translate(290 10) scale(1.6)">' + skyline() + "</g>";
+    if (cruise) o += '<g transform="translate(500 58) scale(1.7)">' + shipArt() + '</g><ellipse cx="900" cy="178" rx="95" ry="16" fill="#f0d49a"/>' + palm(880, 176, 1.1) + palm(940, 178, .8);
+    if (!none) o += '<path d="M0 200q25-9 50 0' + new Array(20).join("t50 0") + 'V240H0z" fill="#146e96"/>';
+    if (none) o += palm(860, 176, 1.1);
+    return o + "</svg>";
+  }
+  function tripPhotos(t) {
+    var out = [];
+    PHOTOS.forEach(function (p) {
+      var hit = t.items.filter(function (i) { return i.date && p.re.test(itemText(i).toLowerCase()); }).sort(byDate)[0];
+      if (hit) out.push({ p: p, date: hit.date });
+    });
+    return out.sort(function (a, b) { return a.date.localeCompare(b.date); });
+  }
+
+  /* ---------- dados ---------- */
+  function example() {
+    return {
+      id: uid(), example: true, name: "Lisboa e Porto", dest: "Portugal", start: "2027-03-12", end: "2027-03-14", budget: 0,
+      items: [
+        { id: uid(), date: "2027-03-12", time: "21:40", title: "Voo GRU → LIS", cat: "voo", place: "Aeroporto de Guarulhos", cost: 0, notes: "", tz: "America/Sao_Paulo", dur: 600 },
+        { id: uid(), date: "2027-03-13", time: "15:00", title: "Castelo de São Jorge", cat: "passeio", place: "Castelo de São Jorge, Lisboa", cost: 0, notes: "", tz: "Europe/Lisbon", dur: 120 }
+      ],
+      todo: [], ideas: [], pack: []
+    };
+  }
+  function norm(s) {
+    s.trips.forEach(function (t) { t.items = t.items || []; t.todo = t.todo || []; t.ideas = t.ideas || []; t.pack = t.pack || []; t.people = t.people || []; t.ports = t.ports || []; });
+    return s;
+  }
+  function load() {
+    try { var raw = localStorage.getItem(KEY); if (raw) { var s = JSON.parse(raw); if (s && s.trips) return norm(s); } } catch (e) {}
+    return { trips: [], cur: null, updatedAt: 0, pending: true };
+  }
+  function exampleState() { var t = example(); return { trips: [t], cur: t.id, updatedAt: 0 }; }
+  function cur() { return state.trips.find(function (t) { return t.id === state.cur; }) || state.trips[0] || null; }
+
+  function save() {
+    if (visitor || state.pending) return;
+    state.updatedAt = Date.now();
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      if (!db) return;
+      db.doc("app/state").set({ json: JSON.stringify(state), updatedAt: state.updatedAt })
+        .then(function () { setSync("Salvo na nuvem"); })
+        .catch(function () { setSync("Salvo apenas neste navegador"); });
+    }, 500);
+  }
+  function setSync(m) { syncMsg = m; var el = document.getElementById("sync"); if (el) el.textContent = m; }
+
+  /* ---------- pessoas ---------- */
+  function who(id) {
+    if (!id) return "";
+    if (id === meId) return "você";
+    var linked = cur() && cur().people.find(function (p) { return p.uid === id; });
+    if (linked) return firstName(linked.name);
+    if (names[id]) return names[id];
+    if (user && !askedNames[id]) {
+      askedNames[id] = true;
+      user.profiles([id]).then(function (ps) { names[id] = (ps[id] && ps[id].name) || "Alguém"; render(); }).catch(function () {});
+    }
+    return "alguém";
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    if (state.pending) {
+      document.getElementById("trips").innerHTML = "";
+      document.getElementById("main").innerHTML = '<div class="empty">Carregando a viagem…</div>';
+      return;
+    }
+    var t = cur();
+    document.getElementById("trips").innerHTML = state.trips.map(function (x) {
+      return '<button class="trip-btn" data-act="pick" data-id="' + x.id + '" aria-current="' + (x.id === (t && t.id)) + '"><div class="thumb sm">' + scene(tripScene(x)) + '</div><div style="min-width:0"><b>' + esc(x.name) + "</b><span>" +
+        (x.start ? fmt(x.start, { day: "2-digit", month: "short" }) + " – " + fmt(x.end, { day: "2-digit", month: "short", year: "numeric" }) : "Sem datas") + "</span></div></button>";
+    }).join("");
+    document.getElementById("sync").textContent = syncMsg;
+    var main = document.getElementById("main");
+    if (!t) { main.innerHTML = '<div class="empty">Nenhuma viagem ainda. Crie a primeira em “Nova viagem”.</div>'; return; }
+
+    var nDays = t.start && t.end ? Math.round((parse(t.end) - parse(t.start)) / 864e5) + 1 : 0;
+    var until = t.start ? Math.ceil((parse(t.start) - parse(today())) / 864e5) : null;
+    var untilTxt = until == null ? "—" : until > 0 ? until + " dias" : until === 0 ? "Hoje" : "Em curso ou concluída";
+    var h = t.example ? '<div class="example-note">Esta viagem é um exemplo. Edite, ou exclua e crie a sua.</div>' : "";
+    if (visitor) h = '<div class="example-note">Modo visitante: uma cópia só de leitura do roteiro' + (state.snapshotAt ? ", atualizada em " + esc(state.snapshotAt) : "") + ". Para editar e ver os documentos, peça um convite a quem compartilhou.</div>" + h;
+    h += '<div class="banner">' + banner(t) + (until > 0 ? '<div class="stamp">faltam<b>' + until + "</b>dias</div>" : "") + "</div>";
+    h += '<section class="hero"><h1>' + esc(t.name) + '</h1><p class="dest">' + esc(t.dest || "Destino a definir") + "</p>" +
+      '<dl class="facts"><div class="fact"><dt>Duração</dt><dd>' + (nDays ? nDays + " dias" : "—") + "</dd></div>" +
+      '<div class="fact"><dt>Faltam</dt><dd>' + untilTxt + "</dd></div>" +
+      '<div class="fact"><dt>Itens no roteiro</dt><dd>' + t.items.length + "</dd></div></dl>" +
+      '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="edit-trip">Editar viagem</button>' +
+      (confirmDel === "trip" ? '<button class="btn small danger" data-act="del-trip">Confirmar exclusão</button><button class="btn small ghost" data-act="cancel-del">Cancelar</button>' : '<button class="btn small ghost danger" data-act="ask-del-trip">Excluir</button>') +
+      "</div></section>";
+    var packDone = t.pack.filter(function (x) { return x.done; }).length;
+    var todoOpen = t.todo.filter(function (x) { return !x.done; }).length;
+    h += '<div class="tabs" role="tablist">' + [
+      ["roteiro", "Roteiro", ""], ["viajantes", "Viajantes", t.people.length || ""]
+    ].concat(t.ports.length ? [["paradas", "Paradas", t.ports.length]] : [], t.dining && t.dining.restaurants ? [["restaurantes", "Restaurantes " + (t.dining.ship || "do navio"), t.dining.restaurants.length]] : [], t.shows && t.shows.shows ? [["broadway", "Broadway", t.shows.shows.length]] : [], t.weather && t.weather.places ? [["clima", "Clima", ""]] : [], [
+      ["ideias", "Ideias", t.ideas.length || ""], ["mala", "Mala", t.pack.length ? packDone + "/" + t.pack.length : ""],
+      ["pendencias", "Pendências", todoOpen || ""], ["orcamento", "Orçamento", ""]
+    ]).filter(function (x) { return !(visitor && x[0] === "orcamento"); }).map(function (x) {
+      return '<button class="tab" role="tab" data-act="tab" data-tab="' + x[0] + '" aria-selected="' + (tab === x[0]) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + (TAB_ICONS[x[0]] || "") + "</svg><span>" + x[1] + "</span>" + (x[2] !== "" ? "<small>" + x[2] + "</small>" : "") + "</button>";
+    }).join("") + "</div>";
+    if ((tab === "paradas" && !t.ports.length) || (tab === "restaurantes" && !(t.dining && t.dining.restaurants)) || (tab === "broadway" && !(t.shows && t.shows.shows)) || (tab === "clima" && !(t.weather && t.weather.places))) tab = "roteiro";
+    h += tab === "roteiro" ? viewDays(t) : tab === "viajantes" ? viewPeople(t) : tab === "paradas" ? viewPorts(t) : tab === "restaurantes" ? viewDining(t) : tab === "broadway" ? viewShows(t) : tab === "clima" ? viewWeather(t) : tab === "ideias" ? viewIdeas(t) : tab === "mala" ? viewPack(t) : tab === "pendencias" ? viewTodo(t) : viewBudget(t);
+    main.innerHTML = h;
+
+    if (tab === "roteiro" && !scrolledToday && t.start && today() >= t.start && today() <= t.end) {
+      scrolledToday = true;
+      var el = document.getElementById("d-" + today());
+      if (el) el.scrollIntoView({ block: "start" });
+    }
+  }
+
+  function todayCard(t) {
+    var tk = today(), hm = nowHM();
+    var next = t.items.filter(function (i) { return i.date && (i.date > tk || (i.date === tk && (!i.time || i.time >= hm))); }).sort(byDate)[0];
+    var inTrip = t.start && tk >= t.start && tk <= t.end;
+    if (!next && !inTrip) return "";
+    var label = inTrip ? "Hoje, " + fmt(tk, { day: "2-digit", month: "long" }) + (next ? " · próximo compromisso" : "") : "Próximo compromisso";
+    if (!next) return '<div class="today"><div class="today-text"><div class="eyebrow">' + label + "</div><b>Nada mais planejado para hoje.</b></div></div>";
+    var sc = next.cat === "voo" ? "plane" : next.cat === "cruzeiro" ? "ship" : sceneByText(itemText(next)) || "pin";
+    return '<div class="today"><div class="thumb">' + dayThumb(sc, [next]) + '</div><div class="today-text"><div class="eyebrow">' + label + "</div><b>" + esc(next.title) + "</b><span>" +
+      fmt(next.date, { weekday: "short", day: "2-digit", month: "short" }) + (next.time ? " · " + next.time : "") + (next.place ? " · " + esc(next.place) : "") +
+      '</span></div><button class="btn small" data-act="goto" data-date="' + next.date + '">Ver no roteiro</button></div>';
+  }
+
+  function viewDays(t) {
+    var dates = {};
+    if (t.start && t.end) for (var d = parse(t.start); d <= parse(t.end) && Object.keys(dates).length < 400; d += 864e5) dates[iso(d)] = 1;
+    t.items.forEach(function (i) { if (i.date) dates[i.date] = 1; });
+    var keys = Object.keys(dates).sort(), n = 0, out = "", tk = today();
+    var cr = t.items.filter(function (i) { return i.cat === "cruzeiro" && i.date; }).map(function (i) { return i.date; }).sort(), cStart = cr[0], cEnd = cr[cr.length - 1];
+    keys.forEach(function (k) {
+      n++;
+      var items = t.items.filter(function (i) { return i.date === k && inPf(i); }).sort(byDate);
+      var sc = dayScene(t, k, items, cStart, cEnd);
+      out += '<section class="day' + (k === tk ? " is-today" : "") + '" id="d-' + k + '"><div class="day-head"><div class="day-num">' + fmt(k, { day: "2-digit" }) + '</div><div class="day-wd">' + fmt(k, { weekday: "short", month: "short" }) + '</div><div class="thumb">' + dayThumb(sc, items) + "</div></div>" +
+        '<div class="day-body"><div class="day-title"><span>Dia ' + n + " · " + SCENE_NAME[sc] + "</span>" + wxChip(t, k) + (k === tk ? '<span class="badge">Hoje</span>' : "") + "</div>" +
+        (items.length ? items.map(itemHtml).join("") : '<div class="meta">' + (sc === "sea" ? "A bordo do navio, sem parada em porto." : "Nada planejado ainda.") + "</div>") +
+        '<button class="btn small add-row" data-act="add-item" data-date="' + k + '">+ Adicionar ao dia</button></div></section>';
+    });
+    var loose = t.items.filter(function (i) { return !i.date && inPf(i); });
+    if (loose.length) out += '<section class="day"><div class="day-head"><div class="day-num">?</div><div class="day-wd">Sem dia</div></div><div class="day-body">' + loose.map(itemHtml).join("") + "</div></section>";
+    if (!out) out = '<div class="empty">Defina as datas da viagem para montar o roteiro dia a dia.<br><br><button class="btn primary" data-act="add-item" data-date="">Adicionar item sem data</button></div>';
+    var ph = tripPhotos(t);
+    var cards = ph.length ? '<div class="postcards" aria-label="Destinos">' + ph.map(function (x) {
+      return '<button class="postcard" data-act="goto" data-date="' + x.date + '">' + img(x.p) + "<div><b>" + esc(x.p.name) + "</b><span>" + fmt(x.date, { day: "2-digit", month: "short" }) + "</span></div></button>";
+    }).join("") + "</div>" : "";
+    return peopleBar(t) + todayCard(t) + cards + out + credits(ph);
+  }
+  function credits(ph) {
+    if (!ph.length) return "";
+    ph = ph.filter(function (x) { return !x.p.own; });
+    if (!ph.length) return "";
+    return '<p class="credits">Fotos do Wikimedia Commons: ' + ph.map(function (x) {
+      return '<a href="https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(x.p.page) + '" target="_blank" rel="noopener">' + esc(x.p.name) + "</a> (" + esc(x.p.by) + ", " + x.p.lic + ")";
+    }).join(" · ") + ".</p>";
+  }
+  var AIRLINES = {
+    UA: { name: "United Airlines", icao: "UAL", site: "https://www.united.com/en/us/flightstatus", badge: "UNITED" },
+    G3: { name: "GOL", icao: "GLO", site: "https://www.voegol.com.br", logo: "fotos/logo-gol.svg" },
+    DL: { name: "Delta Air Lines", icao: "DAL", site: "https://www.delta.com/flightstatus", badge: "DELTA", bg: "#c01933" } /* vermelho da marca */
+  };
+  function flightOf(i) {
+    if (i.cat !== "voo") return null;
+    var m = (i.title || "").match(/\b(UA|G3|DL)\s?(\d{1,4})\b/);
+    if (!m) return null;
+    var a = AIRLINES[m[1]];
+    return { code: m[1], num: m[2], airline: a, track: "https://www.flightaware.com/live/flight/" + a.icao + m[2] };
+  }
+  function airlineHead(f) {
+    return '<div class="airline">' + (f.airline.logo ? '<img class="al-logo" src="' + f.airline.logo + '" alt="' + esc(f.airline.name) + '">' : '<span class="al-badge"' + (f.airline.bg ? ' style="background:' + f.airline.bg + '"' : "") + ' aria-label="' + esc(f.airline.name) + '">' + esc(f.airline.badge) + "</span>") +
+      "<span>" + esc(f.airline.name) + " · " + f.code + " " + f.num + "</span></div>";
+  }
+  function mapUrl(q) { return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q); }
+  function uberUrl(x) {
+    var u = "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=" + encodeURIComponent(x.place) + "&dropoff[nickname]=" + encodeURIComponent(x.title || x.text || x.place);
+    if (x.lat && x.lng) u += "&dropoff[latitude]=" + Number(x.lat) + "&dropoff[longitude]=" + Number(x.lng);
+    return esc(u);
+  }
+  function uberBtn(x) { return '<a class="btn small ghost" href="' + uberUrl(x) + '" target="_blank" rel="noopener">Pedir Uber</a>'; }
+  function itemHtml(i) {
+    var c = CATS[i.cat] ? i.cat : "outro";
+    var onCal = i.calBy && i.calBy[meId || "local"];
+    var fl = flightOf(i);
+    return '<article class="item" style="--cat:var(--c-' + c + ')"><div class="time">' + esc(i.time || "--:--") + "</div><div>" + (fl ? airlineHead(fl) : "") + "<h3>" + esc(i.title) + '</h3><div class="meta"><span class="chip">' + icon(c) + CATS[c] + "</span>" + esc(i.place) + "</div>" +
+      (i.notes ? '<div class="notes">' + esc(i.notes) + "</div>" : "") + filesHtml(i) + avatars(i.who) + "</div>" +
+      '<div class="item-actions">' +
+      (fl ? '<a class="btn small primary" href="' + fl.track + '" target="_blank" rel="noopener" title="Horário previsto, atraso, terminal e portão">Status e portão</a><a class="btn small ghost" href="' + fl.airline.site + '" target="_blank" rel="noopener">Site da ' + esc(fl.airline.name.split(" ")[0]) + "</a>" : "") +
+      (/^https?:\/\//.test(i.book || "") ? '<a class="btn small primary" href="' + esc(i.book) + '" target="_blank" rel="noopener">Reservar</a>' : "") +
+      '<button class="btn small ghost" data-act="edit-item" data-id="' + i.id + '">Editar</button><button class="btn small ghost" data-act="attach" data-id="' + i.id + '">Anexar PDF</button>' +
+      (i.place && c !== "voo" ? '<a class="btn small ghost" href="' + mapUrl(i.place) + '" target="_blank" rel="noopener">Ver no mapa</a>' + uberBtn(i) : "") +
+      (i.date ? (onCal ? '<button class="btn small ghost done" data-act="cal" data-id="' + i.id + '">Na sua agenda ✓</button>' : '<button class="btn small ghost" data-act="cal" data-id="' + i.id + '">Lançar na agenda</button>') : "") +
+      (confirmDel === i.id ? '<button class="btn small danger" data-act="del-item" data-id="' + i.id + '">Confirmar</button><button class="btn small ghost" data-act="cancel-del">Cancelar</button>' : '<button class="btn small ghost" data-act="ask-del" data-id="' + i.id + '">Excluir</button>') + "</div></article>";
+  }
+
+  function viewIdeas(t) {
+    var h = '<div class="panel-head"><p>Guarde aqui o que encontrar nas pesquisas: restaurantes, passeios em cada porto, atrações. Quando decidir o dia, leve a ideia para o roteiro.</p><button class="btn primary" data-act="new-idea">+ Nova ideia</button></div>';
+    if (!t.ideas.length) return h + '<div class="empty">Nenhuma ideia ainda. Que tal começar pelos passeios em Puerto Plata ou San Juan?</div>';
+    return h + '<div class="ideas">' + t.ideas.map(function (x) {
+      var link = /^https?:\/\//i.test(x.link || "") ? '<a href="' + esc(x.link) + '" target="_blank" rel="noopener">' + esc(x.link.replace(/^https?:\/\/(www\.)?/i, "").split("/")[0]) + "</a>" : "";
+      return '<article class="idea"><h3>' + esc(x.text) + "</h3>" + (x.place ? '<div class="meta">' + esc(x.place) + "</div>" : "") + (x.notes ? '<div class="notes">' + esc(x.notes) + "</div>" : "") + (link ? '<div class="meta">' + link + "</div>" : "") +
+        '<div class="item-actions"><button class="btn small" data-act="idea-to-item" data-id="' + x.id + '">Levar para o roteiro</button><button class="btn small ghost" data-act="edit-idea" data-id="' + x.id + '">Editar</button>' +
+        (x.place ? '<a class="btn small ghost" href="' + mapUrl(x.place) + '" target="_blank" rel="noopener">Mapa</a>' + uberBtn(x) : "") +
+        (confirmDel === x.id ? '<button class="btn small danger" data-act="del-idea" data-id="' + x.id + '">Confirmar</button>' : '<button class="btn small ghost" data-act="ask-del" data-id="' + x.id + '">Excluir</button>') + "</div></article>";
+    }).join("") + "</div>";
+  }
+
+  function checkRow(list, x) {
+    return '<div class="check' + (x.done ? " done" : "") + '"><input type="checkbox" id="' + list + "-" + x.id + '" data-act="toggle" data-list="' + list + '" data-id="' + x.id + '"' + (x.done ? " checked" : "") + '><label for="' + list + "-" + x.id + '">' + esc(x.text) + "</label>" + (x.who ? avatars([x.who]) : "") +
+      (x.done && x.by ? '<span class="by">por ' + esc(who(x.by)) + "</span>" : "") +
+      '<button class="btn small ghost" data-act="del-check" data-list="' + list + '" data-id="' + x.id + '" aria-label="Remover">Remover</button></div>';
+  }
+  function viewPack(t) {
+    var groups = [];
+    t.pack.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
+    PACK_GROUPS.forEach(function (g) { if (groups.indexOf(g) < 0) groups.push(g); });
+    var mine = t.pack.filter(mineOnly);
+    var done = mine.filter(function (x) { return x.done; }).length;
+    var h = peopleBar(t) + '<div class="panel"><div class="panel-head" style="margin:0"><p><b style="color:var(--fg)">' + done + " de " + mine.length + "</b> itens na mala" + (pf ? " para " + esc(firstName(person(t, pf).name)) + " (os dele ou dela e os de todos)" : "") + ". Separado por clima: frio em Minnesota e Nova York, calor no Caribe.</p></div>" +
+      '<div class="progress"><i style="width:' + (mine.length ? done / mine.length * 100 : 0) + '%"></i></div>' +
+      '<form class="inline-form" id="pack-form"><input id="pack-text" placeholder="Novo item da mala" aria-label="Novo item da mala" required><select id="pack-group" aria-label="Grupo">' +
+      groups.map(function (g) { return "<option>" + esc(g) + "</option>"; }).join("") + '</select>' + whoSelect("pack-who") + '<button class="btn primary" type="submit">Adicionar</button></form></div>';
+    groups.forEach(function (g) {
+      var xs = mine.filter(function (x) { return x.group === g; });
+      if (!xs.length) return;
+      var gd = xs.filter(function (x) { return x.done; }).length;
+      h += '<div class="panel"><h2>' + esc(g) + ' <span style="font:400 13px var(--font-body);color:var(--muted)">' + gd + " de " + xs.length + "</span></h2>" + xs.map(function (x) { return checkRow("pack", x); }).join("") + "</div>";
+    });
+    return h;
+  }
+  function viewTodo(t) {
+    var list = t.todo.filter(mineOnly);
+    var done = list.filter(function (x) { return x.done; }).length;
+    return peopleBar(t) + '<div class="panel"><h2>Antes de viajar <span style="font:400 13px var(--font-body);color:var(--muted)">' + done + " de " + list.length + " feitas</span></h2>" +
+      (list.length ? list.map(function (x) { return checkRow("todo", x); }).join("") : '<div class="empty">Nada pendente. Anote passaporte, seguro, reservas, câmbio.</div>') +
+      '<form class="inline-form" id="todo-form"><input id="todo-text" placeholder="Nova pendência" aria-label="Nova pendência" required>' + whoSelect("todo-who") + '<button class="btn primary" type="submit">Adicionar</button></form></div>';
+  }
+
+  function viewPeople(t) {
+    var h = '<div class="panel-head"><p>Quem viaja, em que partes da viagem e o que falta para cada um. Toque em “Sou eu” no seu cartão para o app marcar o que você fizer com o seu nome.</p><button class="btn primary" data-act="new-person">+ Viajante</button></div>';
+    if (!t.people.length) return h + '<div class="empty">Cadastre os viajantes para separar roteiro, mala e pendências por pessoa.</div>';
+    var tk = today(), hm = nowHM(), limit = t.end ? sixMonthsAfter(t.end) : "";
+    return h + '<div class="people">' + t.people.map(function (p) {
+      var its = t.items.filter(function (i) { return goes(i, p.id); });
+      var next = its.filter(function (i) { return i.date && (i.date > tk || (i.date === tk && (!i.time || i.time >= hm))); }).sort(byDate)[0];
+      var pk = t.pack.filter(function (x) { return x.who === p.id; }), pkDone = pk.filter(function (x) { return x.done; }).length;
+      var td = t.todo.filter(function (x) { return x.who === p.id && !x.done; }).length;
+      var pass = !p.passport ? '<div class="flag">Validade do passaporte não informada.</div>' :
+        limit && p.passport < limit ? '<div class="flag">Passaporte vence em ' + fmt(p.passport, { day: "2-digit", month: "short", year: "numeric" }) + ", menos de 6 meses depois da volta.</div>" :
+        '<div class="flag ok">Passaporte válido até ' + fmt(p.passport, { day: "2-digit", month: "short", year: "numeric" }) + ".</div>";
+      var isMe = meId && p.uid === meId;
+      return '<article class="person"><div class="person-head">' + av(p, true) + "<div><b>" + esc(p.name) + "</b><span>" + (p.age ? p.age + " anos" : "") + (isMe ? ' · <span class="badge">Você</span>' : "") + "</span></div></div>" +
+        "<ul><li>Participa de <b>" + its.length + "</b> de " + t.items.length + " itens do roteiro</li>" +
+        (next ? "<li>Próximo: " + esc(next.title) + " (" + fmt(next.date, { day: "2-digit", month: "short" }) + (next.time ? ", " + next.time : "") + ")</li>" : "") +
+        "<li>Mala pessoal: " + pkDone + " de " + pk.length + " itens</li><li>Pendências abertas: " + td + "</li></ul>" +
+        pass + (p.notes ? '<div class="notes">' + esc(p.notes) + "</div>" : "") + personDocs(p) +
+        '<div class="item-actions" style="margin-top:auto"><button class="btn small" data-act="pf-go" data-id="' + p.id + '">Ver roteiro</button><button class="btn small ghost" data-act="edit-person" data-id="' + p.id + '">Editar</button><button class="btn small ghost" data-act="person-photo" data-id="' + p.id + '">Trocar foto</button>' +
+        (meId && !isMe ? '<button class="btn small ghost" data-act="me-person" data-id="' + p.id + '">Sou eu</button>' : "") + "</div></article>";
+    }).join("") + "</div>";
+  }
+
+  function personDocs(p) {
+    var docs = p.docs || [];
+    return '<div class="docs"><div class="docs-title">Documentos</div>' +
+      (docs.length ? '<div class="files" style="margin:0">' + docs.map(function (f) {
+        var k = "d:" + p.id + ":" + f.id;
+        return '<span class="file"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + DOC_ICON + esc(f.name) + "</a>" +
+          (confirmDel === k ? '<button class="btn small danger" data-act="del-doc" data-id="' + p.id + '" data-file="' + esc(f.id) + '">Remover</button>' : '<button class="x" data-act="ask-del" data-id="' + k + '" aria-label="Remover documento ' + esc(f.name) + '">×</button>') + "</span>";
+      }).join("") + "</div>" : '<div class="meta">Nenhum documento anexado. Passaporte, visto, seguro e receitas médicas cabem aqui.</div>') +
+      '<button class="btn small" style="justify-self:start" data-act="add-doc" data-id="' + p.id + '">Anexar documento</button></div>';
+  }
+
+  var EFFORT = { "fácil": "facil", "facil": "facil", "moderado": "moderado", "puxado": "puxado" };
+  function viewPorts(t) {
+    var h = '<div class="panel-head"><p>Sugestões para cada parada, pensadas para o grupo: opções tranquilas para Ubirajara e Carlene, praia e natureza, e programas que a Alice vai curtir. Use “Levar para o roteiro” para fixar o que decidirem.</p></div>';
+    return h + t.ports.map(function (g) {
+      var stop = t.items.filter(function (i) { return i.cat === "cruzeiro" && g.re && new RegExp(g.re, "i").test(itemText(i)); })[0] ||
+        t.items.filter(function (i) { return i.cat === "cruzeiro" && itemText(i).toLowerCase().indexOf(g.port.toLowerCase()) >= 0; })[0];
+      var ph = photoByKey(g.key);
+      return '<section class="port" id="porto-' + esc(g.key) + '"><div class="port-head">' + (ph ? img(ph) : '<div class="thumb" style="margin:0;width:100%;height:100%;border-radius:0">' + scene("ship") + "</div>") +
+        '<div class="port-info"><div class="eyebrow">' + (stop ? fmt(stop.date, { weekday: "long", day: "2-digit", month: "short" }) + (stop.time ? " · chegada " + stop.time : "") : "Parada") + "</div><h2>" + esc(g.port) + "</h2>" +
+        (stop && stop.notes ? '<div class="meta">' + esc(stop.notes.split(".")[0]) + ".</div>" : "") +
+        (g.dock ? '<div class="meta">' + esc(g.dock) + (g.walkable ? " " + esc(g.walkable) : "") + "</div>" : "") + "</div></div>" +
+        '<div class="port-body">' + (g.suggestions || []).map(function (s, n) {
+          var eff = EFFORT[(s.effort || "").toLowerCase()];
+          return '<div class="sugg"><h3>' + esc(s.title) + '</h3><div class="tags">' + (eff ? '<span class="tag ' + eff + '">' + esc(s.effort) + "</span>" : "") +
+            (s.duration ? '<span class="tag">' + esc(s.duration) + "</span>" : "") + (s.forWho ? '<span class="tag">' + esc(s.forWho) + "</span>" : "") + "</div>" +
+            '<div class="notes" style="margin:0">' + esc(s.desc) + "</div>" +
+            '<div class="item-actions" style="margin:0">' + (stop ? '<button class="btn small" data-act="port-to-item" data-port="' + esc(g.key) + '" data-n="' + n + '">Levar para o roteiro</button>' : "") +
+            (s.place ? '<a class="btn small ghost" href="' + mapUrl(s.place) + '" target="_blank" rel="noopener">Mapa</a>' : "") +
+            (/^https?:\/\//.test(s.link || "") ? '<a class="btn small ghost" href="' + esc(s.link) + '" target="_blank" rel="noopener">Saiba mais</a>' : "") + "</div></div>";
+        }).join("") +
+        (g.food ? '<div class="tip"><b>Para comer:</b> ' + esc(g.food) + "</div>" : "") +
+        (g.tip ? '<div class="tip"><b>Dica:</b> ' + esc(g.tip) + "</div>" : "") +
+        (g.sources && g.sources.length ? '<div class="src">Fontes: ' + g.sources.map(function (u) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) + "</a>"; }).join(" · ") + "</div>" : "") +
+        "</div></section>";
+    }).join("");
+  }
+
+  function viewDining(t) {
+    var d = t.dining, rs = d.restaurants || [];
+    var h = '<h2 class="sec-title" style="font-size:24px">Restaurantes ' + esc(d.ship || "do navio") + '</h2><div class="panel-head"><p>Onde comer a bordo, dos restaurantes inclusos aos de especialidade. Os cardápios mudam ao longo do ano; os pratos abaixo são exemplos para ter uma ideia.</p></div>' +
+      (d.packageNote ? '<div class="tip" style="margin-bottom:18px">' + esc(d.packageNote) + "</div>" : "");
+    var groups = [["incluso", "Inclusos na tarifa"], ["especialidade", "De especialidade"], ["a la carte", "Pagos à parte"]];
+    groups.forEach(function (gr) {
+      var list = rs.filter(function (r) { return (r.type || "").toLowerCase() === gr[0]; });
+      if (!list.length) return;
+      h += '<h2 class="sec-title">' + gr[1] + '</h2><div class="rest">' + list.map(function (r) {
+        var n = rs.indexOf(r);
+        return '<article class="rcard"><h3>' + esc(r.name) + '</h3><div class="tags"><span class="tag">' + esc(r.cuisine || "") + "</span>" + (r.deck ? '<span class="tag">Deck ' + esc(String(r.deck).replace(/^deck\s*/i, "")) + "</span>" : "") + "</div>" +
+          '<div class="notes" style="margin:0">' + esc(r.desc) + "</div>" +
+          (r.menu && r.menu.length ? "<details><summary>Ver cardápio</summary><ul>" + r.menu.map(function (m) { return "<li>" + esc(m) + "</li>"; }).join("") + "</ul></details>" : "") +
+          (r.kids ? '<div class="meta">' + esc(r.kids) + "</div>" : "") +
+          '<div class="item-actions" style="margin-top:auto"><button class="btn small" data-act="dine-to-item" data-n="' + n + '">Marcar no roteiro</button></div></article>';
+      }).join("") + "</div>";
+    });
+    if (d.sources && d.sources.length) h += '<div class="src">Fontes: ' + d.sources.map(function (u) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) + "</a>"; }).join(" · ") + "</div>";
+    return h;
+  }
+
+  var WX_ICONS = {
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    cloud: '<path d="M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18z"/>',
+    rain: '<path d="M7 15a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 15z"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/>',
+    snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 6.5l2.5-2M9.5 19.5L12 17.5l2.5 2"/>'
+  };
+  function wxKind(w) { return w.snowPct >= 15 || w.hi <= 0 ? "snow" : w.rainPct >= 50 ? "rain" : w.hi >= 24 ? "sun" : "cloud"; }
+  function wxIcon(k, size) { return '<svg viewBox="0 0 24 24" width="' + (size || 14) + '" height="' + (size || 14) + '" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px">' + WX_ICONS[k] + "</svg>"; }
+  function wxFor(t, k) {
+    if (!t.weather || !t.weather.places) return [];
+    return t.weather.places.filter(function (p) { return p.dates.indexOf(k) >= 0; }).map(function (p) {
+      var f = t.weather.forecast && t.weather.forecast[p.key] && t.weather.forecast[p.key][k];
+      return { p: p, w: f ? { hi: f.hi, lo: f.lo, rainPct: f.rainPct, snowPct: f.snow ? 100 : 0 } : p, fc: !!f };
+    });
+  }
+  function wxChip(t, k) {
+    var xs = wxFor(t, k); if (!xs.length) return "";
+    return '<span class="wx" title="' + (xs.some(function (x) { return x.fc; }) ? "Previsão" : "Média histórica para a data") + '">' + xs.map(function (x) {
+      return wxIcon(wxKind(x.w)) + " " + (xs.length > 1 ? esc(x.p.short || x.p.name) + " " : "") + x.w.hi + "° / " + x.w.lo + "°" + (x.fc ? "" : "<i>média</i>");
+    }).join(" · ") + "</span>";
+  }
+  function viewWeather(t) {
+    var W = t.weather;
+    var h = '<h2 class="sec-title" style="font-size:24px">Clima nos dias da viagem</h2><div class="panel-head"><p>' + esc(W.note || "") + "</p></div>";
+    h += '<div class="rest">' + W.places.map(function (p) {
+      var fc = W.forecast && W.forecast[p.key];
+      var days = p.dates.map(function (d) { return fmt(d, { day: "2-digit", month: "2-digit" }); }).join(", ");
+      return '<article class="rcard"><div class="eyebrow">' + esc(days) + "</div><h3>" + esc(p.name) + "</h3>" +
+        '<div style="display:flex;align-items:center;gap:10px;color:var(--accent)">' + wxIcon(wxKind(p), 34) + '<span style="font:700 30px/1 var(--font-display);color:var(--fg)">' + p.hi + '° <span style="color:var(--muted);font-size:20px">/ ' + p.lo + "°</span></span></div>" +
+        '<div class="tags"><span class="tag">chuva em ' + p.rainPct + "% dos dias</span>" + (p.snowPct ? '<span class="tag">neve em ' + p.snowPct + "% dos dias</span>" : "") + '<span class="tag">extremos: ' + p.coldest + "° a " + p.warmest + "°</span></div>" +
+        (fc ? '<div class="tip"><b>Previsão:</b> ' + Object.keys(fc).sort().map(function (d) { var f = fc[d]; return fmt(d, { day: "2-digit", month: "2-digit" }) + " " + f.hi + "°/" + f.lo + "°" + (f.desc ? " " + esc(f.desc) : ""); }).join(" · ") + (W.updated ? '<div class="src">Atualizada em ' + esc(W.updated) + "</div>" : "") + "</div>" : "") +
+        (p.wear ? '<div class="notes" style="margin:0">' + esc(p.wear) + "</div>" : "") +
+        '<div class="item-actions" style="margin-top:auto"><a class="btn small primary" href="' + esc(p.link) + '" target="_blank" rel="noopener">Previsão atualizada</a></div></article>';
+    }).join("") + "</div>";
+    if (W.source) h += '<div class="src">' + esc(W.source) + "</div>";
+    return h;
+  }
+
+  function toMin(hm) { var p = hm.split(":"); return +p[0] * 60 + +p[1]; }
+  function fmtDur(m) { m = Number(m) || 0; return Math.floor(m / 60) + "h" + (m % 60 ? String(m % 60).padStart(2, "0") : ""); }
+  function clashes(t, date, time, dur) {
+    var s = toMin(time), e = s + (Number(dur) || 150);
+    return t.items.filter(function (i) {
+      if (i.date !== date || !i.time) return false;
+      var a = toMin(i.time), b = a + (Number(i.dur) || 60);
+      return a < e && s < b;
+    });
+  }
+  function viewShows(t) {
+    var d = t.shows;
+    var h = '<h2 class="sec-title" style="font-size:24px">Broadway em 02 e 03/01</h2><div class="panel-head"><p>Espetáculos em cartaz nos dias em Nova York. Toque num horário para levar a sessão para o roteiro; horários em vermelho batem com outro compromisso.</p></div>' +
+      (d.tip ? '<div class="tip" style="margin-bottom:18px">' + esc(d.tip) + "</div>" : "");
+    h += '<div class="rest">' + d.shows.map(function (s, n) {
+      var sess = Object.keys(s.schedule || {}).sort().map(function (date) {
+        return (s.schedule[date] || []).map(function (tm) {
+          var c = clashes(t, date, tm, s.runtime);
+          return '<button class="pchip" data-act="show-to-item" data-n="' + n + '" data-date="' + esc(date) + '" data-time="' + esc(tm) + '" title="' + (c.length ? "Bate com: " + esc(c.map(function (x) { return x.title; }).join(", ")) : "Levar para o roteiro") + '"' +
+            (c.length ? ' style="border-color:var(--danger);color:var(--danger)"' : "") + ">" + fmt(date, { weekday: "short", day: "2-digit", month: "2-digit" }) + " · " + esc(tm) + (c.length ? " · conflito" : "") + "</button>";
+        }).join("");
+      }).join("");
+      return '<article class="rcard"><h3>' + esc(s.name) + '</h3><div class="tags"><span class="tag">' + esc(s.genre || "") + "</span>" + (s.runtime ? '<span class="tag">' + fmtDur(s.runtime) + "</span>" : "") + (s.age ? '<span class="tag">' + esc(s.age) + "</span>" : "") + "</div>" +
+        '<div class="meta">' + esc(s.theater) + "</div>" + '<div class="notes" style="margin:0">' + esc(s.desc) + "</div>" + (s.fit ? '<div class="meta">' + esc(s.fit) + "</div>" : "") +
+        '<div class="docs-title" style="margin-top:4px">Sessões</div><div class="pbar" style="margin:0">' + (sess || '<span class="meta">Sem sessões nesses dias.</span>') + "</div>" +
+        (s.scheduleNote ? '<div class="meta">' + esc(s.scheduleNote) + "</div>" : "") +
+        '<div class="item-actions" style="margin-top:auto">' + (/^https?:\/\//.test(s.tickets || "") ? '<a class="btn small primary" href="' + esc(s.tickets) + '" target="_blank" rel="noopener">Comprar ingressos</a>' : "") +
+        (/^https?:\/\//.test(s.site || "") ? '<a class="btn small ghost" href="' + esc(s.site) + '" target="_blank" rel="noopener">Site oficial</a>' : "") +
+        (s.address ? '<a class="btn small ghost" href="' + mapUrl(s.address) + '" target="_blank" rel="noopener">Mapa</a>' : "") + "</div></article>";
+    }).join("") + "</div>";
+    if (d.sources && d.sources.length) h += '<div class="src">Fontes: ' + d.sources.map(function (u) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) + "</a>"; }).join(" · ") + "</div>";
+    return h;
+  }
+
+  function personForm(p) {
+    var isNew = !p, t = cur();
+    p = p || { name: "", age: "", passport: "", notes: "" };
+    openForm("<h2>" + (isNew ? "Novo viajante" : "Editar viajante") + "</h2>" +
+      '<label>Nome<input id="p-name" required value="' + esc(p.name) + '"></label>' +
+      '<label>Idade<input id="p-age" type="number" min="0" max="120" value="' + esc(p.age) + '"></label>' +
+      '<label class="full">Passaporte válido até<input id="p-pass" type="date" value="' + esc(p.passport) + '"></label>' +
+      '<label class="full">Cuidados e preferências<textarea id="p-notes" rows="3" placeholder="Ex.: remédios, assistência no aeroporto, comida">' + esc(p.notes) + "</textarea></label>" + ACTIONS,
+      function () {
+        var data = { name: val("p-name").trim(), age: Number(val("p-age")) || "", passport: val("p-pass"), notes: val("p-notes").trim() };
+        if (isNew) t.people.push(Object.assign({ id: uid(), color: COLORS[t.people.length % COLORS.length], uid: null }, data)); else Object.assign(p, data);
+      });
+  }
+
+  function viewBudget(t) {
+    var total = t.items.reduce(function (a, i) { return a + (Number(i.cost) || 0); }, 0);
+    var by = {}; t.items.forEach(function (i) { var c = CATS[i.cat] ? i.cat : "outro"; by[c] = (by[c] || 0) + (Number(i.cost) || 0); });
+    var scale = Math.max(total, Number(t.budget) || 0, 1);
+    var left = (Number(t.budget) || 0) - total;
+    var h = '<div class="panel"><h2>Resumo</h2><dl class="facts" style="margin:0 0 14px"><div class="fact"><dt>Gasto previsto</dt><dd>' + brl(total) + '</dd></div><div class="fact"><dt>Orçamento</dt><dd>' + (t.budget ? brl(t.budget) : "—") + "</dd></div></dl>" +
+      '<div class="bar" role="img" aria-label="Gastos por categoria">' +
+      Object.keys(by).map(function (c) { return '<i style="width:' + (by[c] / scale * 100) + "%;background:var(--c-" + c + ')"></i>'; }).join("") + "</div>" +
+      '<p style="margin:12px 0 0">' + (t.budget ? (left >= 0 ? "Restam <b>" + brl(left) + "</b> do orçamento." : '<b class="over">' + brl(-left) + "</b> acima do orçamento.") : "Defina um orçamento em “Editar viagem” para acompanhar o saldo.") + "</p></div>";
+    h += '<div class="panel"><h2>Por categoria</h2>' + (total ? Object.keys(CATS).filter(function (c) { return by[c]; }).map(function (c) {
+      return '<div class="cat-row"><span><span class="chip" style="--cat:var(--c-' + c + ')">' + CATS[c] + '</span></span><div class="bar"><i style="width:' + (by[c] / total * 100) + "%;background:var(--c-" + c + ')"></i></div><span class="mono">' + brl(by[c]) + "</span></div>";
+    }).join("") : '<div class="empty">Adicione custos aos itens do roteiro e eles aparecem aqui.</div>') + "</div>";
+    return h + ledger(t);
+  }
+  function ledger(t) {
+    var rows = t.items.filter(function (i) { return Number(i.cost) || i.costNote; }).sort(byDate);
+    if (!rows.length) return "";
+    return '<div class="panel"><h2>Lançamentos</h2>' + rows.map(function (i) {
+      return '<div class="led"><div class="led-main"><b>' + esc(i.title) + "</b><span>" + (i.date ? fmt(i.date, { day: "2-digit", month: "short" }) : "Sem data") + (i.costNote ? " · " + esc(i.costNote) : "") + '</span></div><span class="mono">' + (Number(i.cost) ? brl(i.cost) : "—") + "</span></div>";
+    }).join("") + "</div>";
+  }
+
+  /* ---------- diálogos ---------- */
+  var dlg = document.getElementById("dlg"), form = document.getElementById("form"), onSubmit = null;
+  function openForm(html, cb) { form.innerHTML = html; onSubmit = cb; if (!dlg.open) dlg.showModal(); }
+  function closeForm() { if (dlg.open) dlg.close(); }
+  function val(id) { return document.getElementById(id).value; }
+  var ACTIONS = '<div class="actions"><button class="btn" type="button" data-act="close">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div>';
+
+  function tripForm(t) {
+    var isNew = !t;
+    t = t || { name: "", dest: "", start: "", end: "", budget: "" };
+    openForm("<h2>" + (isNew ? "Nova viagem" : "Editar viagem") + "</h2>" +
+      '<label class="full">Nome<input id="f-name" required value="' + esc(t.name) + '" placeholder="Ex.: Férias na Patagônia"></label>' +
+      '<label class="full">Destino<input id="f-dest" value="' + esc(t.dest) + '" placeholder="Cidade ou país"></label>' +
+      '<label>Ida<input id="f-start" type="date" value="' + esc(t.start) + '"></label>' +
+      '<label>Volta<input id="f-end" type="date" value="' + esc(t.end) + '"></label>' +
+      '<label class="full">Orçamento (R$)<input id="f-budget" type="number" min="0" step="50" value="' + esc(t.budget || "") + '"></label>' + ACTIONS,
+      function () {
+        var s = val("f-start"), e = val("f-end");
+        if (s && !e) e = s;
+        if (e && !s) s = e;
+        if (s && e && e < s) e = s;
+        var data = { name: val("f-name").trim(), dest: val("f-dest").trim(), start: s, end: e, budget: Number(val("f-budget")) || 0 };
+        if (isNew) {
+          var n = Object.assign({ id: uid(), items: [], todo: [], ideas: [], pack: [] }, data);
+          state.trips.push(n); state.cur = n.id; tab = "roteiro";
+        } else { Object.assign(t, data); delete t.example; }
+      });
+  }
+
+  function itemForm(item, date, idea, prefill) {
+    var isNew = !item || !!prefill, t = cur();
+    item = item || { date: date || "", time: "", title: idea ? idea.text : "", cat: "passeio", place: idea ? idea.place : "", cost: "", notes: idea ? [idea.notes, idea.link].filter(Boolean).join("\n") : "", tz: "", dur: "" };
+    openForm("<h2>" + (idea ? "Levar ideia para o roteiro" : isNew ? "Novo item" : "Editar item") + "</h2>" +
+      '<label class="full">O que é<input id="i-title" required value="' + esc(item.title) + '" placeholder="Ex.: Visita ao museu"></label>' +
+      '<label>Dia<input id="i-date" type="date" value="' + esc(item.date) + '"' + (idea ? " required" : "") + "></label>" +
+      '<label>Horário<input id="i-time" type="time" value="' + esc(item.time) + '"></label>' +
+      '<label>Tipo<select id="i-cat">' + Object.keys(CATS).map(function (c) { return '<option value="' + c + '"' + (c === item.cat ? " selected" : "") + ">" + CATS[c] + "</option>"; }).join("") + "</select></label>" +
+      '<label>Duração (min)<input id="i-dur" type="number" min="0" step="5" value="' + esc(item.dur) + '" placeholder="60"></label>' +
+      '<label class="full">Fuso horário do local<select id="i-tz">' + TZS.map(function (z) { return '<option value="' + z[0] + '"' + (z[0] === (item.tz || "America/Sao_Paulo") ? " selected" : "") + ">" + z[1] + "</option>"; }).join("") + "</select></label>" +
+      '<label class="full">Local<input id="i-place" value="' + esc(item.place) + '" placeholder="Endereço ou nome do lugar, usado no mapa"></label>' +
+      '<label class="full">Anotações<textarea id="i-notes" rows="3">' + esc(item.notes) + "</textarea></label>" +
+      '<label class="full">Link de reserva<input id="i-book" type="url" value="' + esc(item.book) + '" placeholder="https:// (OpenTable, Resy, site do lugar)"></label>' +
+      '<label>Custo (R$)<input id="i-cost" type="number" min="0" step="0.01" value="' + esc(item.cost || "") + '"></label>' +
+      '<label>Observação financeira<input id="i-costnote" value="' + esc(item.costNote) + '" placeholder="Aparece só no Orçamento"></label>' + whoField(item.who) + ACTIONS,
+      function () {
+        var data = { date: val("i-date"), time: val("i-time"), title: val("i-title").trim(), cat: val("i-cat"), place: val("i-place").trim(), cost: Number(val("i-cost")) || 0, notes: val("i-notes").trim(), costNote: val("i-costnote").trim(), tz: val("i-tz"), dur: Number(val("i-dur")) || 0, who: checkedWho(), book: val("i-book").trim() };
+        if (isNew) t.items.push(Object.assign({ id: uid() }, data)); else Object.assign(item, data);
+        if (idea) t.ideas = t.ideas.filter(function (x) { return x.id !== idea.id; });
+      });
+  }
+
+  function ideaForm(x) {
+    var isNew = !x, t = cur();
+    x = x || { text: "", place: "", link: "", notes: "" };
+    openForm("<h2>" + (isNew ? "Nova ideia" : "Editar ideia") + "</h2>" +
+      '<label class="full">Ideia<input id="d-text" required value="' + esc(x.text) + '" placeholder="Ex.: Passeio de catamarã em St. Thomas"></label>' +
+      '<label class="full">Lugar<input id="d-place" value="' + esc(x.place) + '" placeholder="Ex.: Magens Bay, St. Thomas"></label>' +
+      '<label class="full">Link<input id="d-link" type="url" value="' + esc(x.link) + '" placeholder="https://"></label>' +
+      '<label class="full">Anotações<textarea id="d-notes" rows="3">' + esc(x.notes) + "</textarea></label>" + ACTIONS,
+      function () {
+        var data = { text: val("d-text").trim(), place: val("d-place").trim(), link: val("d-link").trim(), notes: val("d-notes").trim() };
+        if (isNew) t.ideas.unshift(Object.assign({ id: uid() }, data)); else Object.assign(x, data);
+      });
+  }
+
+  function eventFor(i) {
+    var ev = { summary: i.title, timeZone: i.tz || "America/Sao_Paulo" };
+    if (i.time) {
+      var p = i.date.split("-"), hm = i.time.split(":");
+      var s = Date.UTC(+p[0], +p[1] - 1, +p[2], +hm[0], +hm[1]);
+      ev.startTime = new Date(s).toISOString().slice(0, 19);
+      ev.endTime = new Date(s + (Number(i.dur) || 60) * 60000).toISOString().slice(0, 19);
+    } else {
+      ev.allDay = true;
+      ev.startTime = i.date + "T00:00:00";
+      ev.endTime = iso(parse(i.date) + 864e5) + "T00:00:00";
+    }
+    if (i.place) ev.location = i.place;
+    ev.description = (i.notes ? i.notes + "\n\n" : "") + "Criado pelo Caderno de Viagem.";
+    return ev;
+  }
+  function calForm(i) {
+    var ev = eventFor(i);
+    var when = fmt(i.date, { weekday: "long", day: "2-digit", month: "long", year: "numeric" }) + (i.time ? ", " + ev.startTime.slice(11, 16) + " às " + ev.endTime.slice(11, 16) + (ev.endTime.slice(0, 10) !== ev.startTime.slice(0, 10) ? " do dia seguinte" : "") : ", dia inteiro");
+    openForm("<h2>Lançar no Google Agenda</h2>" +
+      "<dl><dt>Evento</dt><dd>" + esc(ev.summary) + "</dd><dt>Quando</dt><dd>" + esc(when) + "</dd><dt>Fuso</dt><dd>" + esc(tzName(ev.timeZone)) + "</dd>" + (ev.location ? "<dt>Local</dt><dd>" + esc(ev.location) + "</dd>" : "") + "</dl>" +
+      '<p class="meta full" style="margin:0">O evento vai para a sua agenda principal. Valores do orçamento não são enviados.</p><p class="msg" id="cal-msg"></p>' +
+      '<div class="actions"><button class="btn" type="button" data-act="close">Cancelar</button><button class="btn primary" type="submit" id="cal-go">Lançar na agenda</button></div>',
+      function () {
+        var msg = document.getElementById("cal-msg"), go = document.getElementById("cal-go");
+        go.disabled = true; go.textContent = "Lançando…"; msg.textContent = ""; msg.className = "msg";
+        var claude = window.claude;
+        var p = claude && claude.use ? claude.use("mcp") : Promise.resolve(null);
+        return p.then(function (mcp) {
+          if (!mcp) throw { code: "unavailable" };
+          return mcp.callTool("Google Calendar", "create_event", ev);
+        }).then(function () {
+          i.calBy = i.calBy || {}; i.calBy[meId || "local"] = true;
+          return true;
+        }).catch(function (e) {
+          var c = e && e.code;
+          msg.textContent = c === "unavailable" ? "A agenda não está disponível aqui. Abra a página no claude.ai com o Google Agenda conectado." :
+            c === "not_granted" || c === "denied" ? "Sem permissão para usar a agenda. Libere o Google Agenda no menu Permissões da página." :
+            c === "server_not_connected" || c === "needs_reauth" ? "O Google Agenda não está conectado à sua conta do Claude. Conecte-o em Configurações > Conectores." :
+            "Não foi possível criar o evento" + (e && e.message ? ": " + e.message : ".");
+          go.disabled = false; go.textContent = "Tentar de novo";
+          return false;
+        });
+      });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!onSubmit) return closeForm();
+    var r = onSubmit();
+    if (r && r.then) {
+      r.then(function (ok) { if (ok !== false) { onSubmit = null; closeForm(); save(); render(); } });
+      return;
+    }
+    onSubmit = null; closeForm(); save(); render();
+  });
+
+  /* ---------- eventos ---------- */
+  function find(list, id) { return list.find(function (x) { return x.id === id; }); }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b || b.tagName === "INPUT") return;
+    var act = b.dataset.act, t = cur(), id = b.dataset.id;
+    if (visitor && ["pick", "tab", "goto", "pf", "pf-go", "cancel-del", "close"].indexOf(act) < 0) return;
+    if (act === "pick") { state.cur = id; confirmDel = null; scrolledToday = false; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (er) {} }
+    else if (act === "tab") { tab = b.dataset.tab; confirmDel = null; }
+    else if (act === "goto") {
+      tab = "roteiro"; render();
+      var el = document.getElementById("d-" + b.dataset.date); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    else if (act === "new-trip") return tripForm(null);
+    else if (act === "edit-trip") return tripForm(t);
+    else if (act === "add-item") return itemForm(null, b.dataset.date);
+    else if (act === "edit-item") return itemForm(find(t.items, id));
+    else if (act === "cal") return calForm(find(t.items, id));
+    else if (act === "new-idea") return ideaForm(null);
+    else if (act === "edit-idea") return ideaForm(find(t.ideas, id));
+    else if (act === "idea-to-item") return itemForm(null, "", find(t.ideas, id));
+    else if (act === "close") return closeForm();
+    else if (act === "attach") return attach(find(t.items, id));
+    else if (act === "new-person") return personForm(null);
+    else if (act === "edit-person") return personForm(find(t.people, id));
+    else if (act === "person-photo") return personPhoto(find(t.people, id));
+    else if (act === "add-doc") {
+      var pp = find(t.people, id);
+      return upload("application/pdf,image/*,.jsonl,application/jsonl,application/x-ndjson", function (r, f) {
+        pp.docs = pp.docs || [];
+        pp.docs.push({ id: r.id, url: r.url, name: f.name });
+        save(); render(); toast("Documento anexado para " + firstName(pp.name) + ".");
+      });
+    }
+    else if (act === "del-doc") {
+      var pd = find(t.people, id);
+      pd.docs = (pd.docs || []).filter(function (f) { return f.id !== b.dataset.file; });
+      confirmDel = null; save();
+    }
+    else if (act === "port-to-item") {
+      var g = t.ports.find(function (x) { return x.key === b.dataset.port; }), s = g.suggestions[+b.dataset.n];
+      var stop = t.items.filter(function (i) { return i.cat === "cruzeiro" && g.re && new RegExp(g.re, "i").test(itemText(i)); })[0];
+      return itemForm({ date: stop ? stop.date : "", time: "", title: s.title, cat: "passeio", place: s.place || g.port, cost: "", notes: s.desc + (s.link ? "\n" + s.link : ""), tz: stop ? stop.tz : "", dur: "", who: [] }, null, null, true);
+    }
+    else if (act === "show-to-item") {
+      var sh = t.shows.shows[+b.dataset.n];
+      return itemForm({ date: b.dataset.date, time: b.dataset.time, title: "Broadway: " + sh.name, cat: "passeio", place: sh.theater + (sh.address ? ", " + sh.address : ""), cost: "", notes: sh.desc, tz: "America/New_York", dur: sh.runtime || 150, who: [], book: sh.tickets || "" }, null, null, true);
+    }
+    else if (act === "dine-to-item") {
+      var r = t.dining.restaurants[+b.dataset.n];
+      return itemForm({ date: "", time: "19:00", title: "Jantar no " + r.name, cat: "refeicao", place: (t.dining.ship || "Navio") + " · " + r.name + (r.deck ? ", deck " + String(r.deck).replace(/^deck\s*/i, "") : ""), cost: "", notes: r.desc, tz: "America/Puerto_Rico", dur: 90, who: [] }, null, null, true);
+    }
+    else if (act === "pf") { pf = id || ""; try { localStorage.setItem("caderno-pf", pf); } catch (er) {} }
+    else if (act === "pf-go") { pf = id; tab = "roteiro"; try { localStorage.setItem("caderno-pf", pf); } catch (er) {} }
+    else if (act === "me-person") {
+      t.people.forEach(function (p) { if (p.uid === meId) p.uid = null; });
+      find(t.people, id).uid = meId; pf = id;
+      try { localStorage.setItem("caderno-pf", pf); } catch (er) {}
+      save(); toast("Pronto: você é " + firstName(find(t.people, id).name) + " neste app.");
+    }
+    else if (act === "del-file") {
+      var it = find(t.items, id);
+      it.files = (it.files || []).filter(function (f) { return f.id !== b.dataset.file; });
+      confirmDel = null; save();
+    }
+    else if (act === "ask-del") confirmDel = id;
+    else if (act === "ask-del-trip") confirmDel = "trip";
+    else if (act === "cancel-del") confirmDel = null;
+    else if (act === "del-item") { t.items = t.items.filter(function (i) { return i.id !== id; }); confirmDel = null; save(); }
+    else if (act === "del-idea") { t.ideas = t.ideas.filter(function (i) { return i.id !== id; }); confirmDel = null; save(); }
+    else if (act === "del-trip") { state.trips = state.trips.filter(function (x) { return x.id !== t.id; }); state.cur = state.trips[0] ? state.trips[0].id : null; confirmDel = null; save(); }
+    else if (act === "del-check") { t[b.dataset.list] = t[b.dataset.list].filter(function (x) { return x.id !== id; }); save(); }
+    else return;
+    render();
+  });
+  document.addEventListener("change", function (e) {
+    var b = e.target.closest('[data-act="toggle"]'); if (!b) return;
+    var x = find(cur()[b.dataset.list], b.dataset.id);
+    if (x) { x.done = b.checked; x.by = b.checked ? meId : null; save(); render(); }
+  });
+  document.addEventListener("submit", function (e) {
+    var f = e.target;
+    if (f.id === "todo-form") {
+      e.preventDefault();
+      var v = val("todo-text").trim(); if (!v) return;
+      cur().todo.push({ id: uid(), text: v, done: false, who: val("todo-who") }); save(); render();
+      document.getElementById("todo-text").focus();
+    } else if (f.id === "pack-form") {
+      e.preventDefault();
+      var p = val("pack-text").trim(), g = val("pack-group"); if (!p) return;
+      cur().pack.push({ id: uid(), text: p, group: g, done: false, who: val("pack-who") }); save(); render();
+      document.getElementById("pack-group").value = g;
+      document.getElementById("pack-text").focus();
+    }
+  });
+
+  /* ---------- início ---------- */
+  state = load();
+  render();
+
+  function enterVisitor() {
+    if (db) return;
+    visitor = true;
+    document.body.classList.add("visitor");
+    setSync("Modo visitante: só leitura");
+    fetch("publico.json").then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (s) {
+      state = norm(s); if (tab === "orcamento") tab = "roteiro"; render();
+    }).catch(function () { if (state.pending) { state = exampleState(); render(); } });
+  }
+
+  if (!(window.claude && window.claude.use)) enterVisitor();
+  if (window.claude && window.claude.use) {
+    window.claude.use("user").then(function (u) {
+      if (!u) return;
+      user = u;
+      return u.id().then(function (id) {
+        meId = id;
+        return u.me().then(function (m) { if (m && m.name) document.getElementById("me").textContent = "Você está como " + m.name + "."; });
+      }).then(render);
+    }).catch(function () {});
+
+    window.claude.use("db").then(function (d) {
+      if (!d) { enterVisitor(); return; }
+      db = d;
+      var first = true;
+      var timer = setTimeout(function () { setSync("Salvo apenas neste navegador"); if (state.pending) { state = exampleState(); render(); } }, 10000);
+      db.doc("app/state").onSnapshot(function (snap) {
+        clearTimeout(timer);
+        var data = snap.exists ? snap.data() : null;
+        var remote = data && data.json ? norm(JSON.parse(data.json)) : null;
+        if (remote && (remote.updatedAt || 0) > (state.updatedAt || 0)) {
+          var keep = state.cur;
+          state = remote;
+          if (!first && keep && state.trips.some(function (x) { return x.id === keep; })) state.cur = keep;
+          try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+          render();
+        } else if (first && state.updatedAt && (!remote || state.updatedAt > (remote.updatedAt || 0))) save();
+        else if (!remote && state.pending) { state = exampleState(); render(); }
+        first = false;
+        setSync("Salvo na nuvem · atualiza ao vivo");
+      }, function () { clearTimeout(timer); setSync("Salvo apenas neste navegador"); if (state.pending) { db = null; enterVisitor(); } });
+    }).catch(function () { enterVisitor(); });
+  }
+})();
+</script>
+
+{"trips":[{"id":"nycruise","name":"Minnesota, Nova York e Cruzeiro","dest":"Houston, St. Paul, Nova York e Caribe","start":"2026-12-28","end":"2027-01-17","budget":0,"people":[{"id":"p-carlos","name":"Carlos Márcio","age":49,"color":"#0b6e8a","notes":"","photo":"fotos/p-carlos.jpg"},{"id":"p-sabrina","name":"Sabrina","age":47,"color":"#c2691c","notes":"","photo":"fotos/p-sabrina.jpg"},{"id":"p-alice","name":"Alice","age":12,"color":"#7a4fb0","notes":"Fã de K-pop. A Violet K-pop está no roteiro de Houston, em 29/12.","photo":"fotos/p-alice.jpg"},{"id":"p-ubirajara","name":"Ubirajara","age":82,"color":"#2b8a6e","notes":"Mesmos voos da família (ida e volta) e também no cruzeiro. Números de reserva, assentos e cabine ainda a informar.","photo":"fotos/p-ubirajara.jpg"},{"id":"p-carlene","name":"Carlene","age":74,"color":"#b3382c","notes":"Mesmos voos da família (ida e volta) e também no cruzeiro. Números de reserva, assentos e cabine ainda a informar.","photo":"fotos/p-carlene.jpg"}],"items":[{"id":"ny1","date":"2026-12-28","time":"11:35","title":"Voo G3 1491 Goiânia → São Paulo","cat":"voo","place":"GYN → GRU (chega 13:15)","notes":"Boeing 737-800, 1h40. Assentos de Carlos, Sabrina e Alice: ainda não escolhidos. Assentos de Ubirajara e Carlene a informar.","tz":"America/Sao_Paulo","dur":100,"who":[]},{"id":"ny2","date":"2026-12-28","time":"22:15","title":"Voo UA 63 São Paulo → Houston","cat":"voo","place":"GRU → IAH (chega 05:25 de 29/12)","notes":"Boeing 787-9, 10h10. Assentos de Carlos, Sabrina e Alice: 31A, 31B, 31C. Assentos de Ubirajara e Carlene a informar.","tz":"America/Sao_Paulo","dur":610,"who":[]},{"id":"ny3","date":"2026-12-29","time":"20:00","title":"Voo UA 1540 Houston → Minneapolis/St. Paul","cat":"voo","place":"IAH → MSP (chega 22:57)","notes":"Airbus A319, 2h57. Assentos de Carlos, Sabrina e Alice: 30D, 30E, 30F. Assentos de Ubirajara e Carlene a informar. Conexão de 14h35 em Houston, aproveitada para passear.","tz":"America/Chicago","dur":177,"who":[]},{"id":"ny4","date":"2026-12-29","time":"05:25","title":"Chegada a Houston: imigração e malas","cat":"outro","place":"George Bush Intercontinental Airport (IAH), Houston","notes":"Primeira entrada nos EUA: imigração e alfândega, retirada das malas e novo despacho no balcão de conexão da United, já para Minneapolis. Depois disso, ficam livres até o voo das 20:00. Levem só uma bolsa leve para o passeio.","tz":"America/Chicago","dur":90,"lat":29.9841416,"lng":-95.332986,"who":[]},{"id":"ny7","date":"2026-12-29","time":"10:00","title":"Violet K-pop: a loja da Alice","cat":"passeio","place":"Violet K-pop, 575 W Bay Area Blvd, Webster, TX 77598","notes":"Loja de álbuns e produtos de K-pop, a uns 10 minutos da NASA. A Violet tem outras lojas em Houston; esta é a mais perto do Space Center. Confirmem o horário antes em violetgift.com.","tz":"America/Chicago","dur":90,"lat":29.5448573,"lng":-95.1336647,"who":[],"book":""},{"id":"ny9","date":"2026-12-29","time":"15:00","title":"Uber de volta ao aeroporto (IAH)","cat":"transporte","place":"George Bush Intercontinental Airport (IAH), Houston","notes":"Cerca de 55 km, de 45 a 60 minutos; o trânsito piora depois das 16:00. Chegando por volta das 16:00 sobra tempo para a segurança e o voo das 20:00. Com 5 pessoas, peçam UberXL (até 6 lugares).","tz":"America/Chicago","dur":60,"lat":29.9841416,"lng":-95.332986,"who":[]},{"id":"ny10","date":"2026-12-29","time":"23:30","title":"Check-in Hampton Inn & Suites Downtown St. Paul","cat":"hospedagem","place":"200 Seventh St W, St. Paul, MN 55102","notes":"2 quartos com 2 camas Queen, café da manhã incluso. Quarto 1: Carlos Macedo (2 adultos, 1 criança). Quarto 2: Ubirajara Abbud (2 adultos). Chegada do voo só às 22:57: avisar a recepção, que receberá fora do horário. Cancelamento grátis até 23/12 às 23:59.","tz":"America/Chicago","dur":60,"who":[],"book":""},{"id":"ny11","date":"2026-12-30","time":"","title":"Dia com a Carolina","cat":"passeio","place":"Minneapolis, MN","notes":"Visita à sobrinha Carolina, que se formou na University of Minnesota em 2025. Ideias de passeio na aba Ideias.","tz":"America/Chicago","dur":0,"who":[]},{"id":"ny12","date":"2026-12-31","time":"","title":"Réveillon em família com a Carolina","cat":"passeio","place":"Minneapolis–St. Paul, MN","notes":"Virada do ano em Minnesota.","tz":"America/Chicago","dur":0,"who":[]},{"id":"ny13","date":"2027-01-01","time":"08:00","title":"Check-out do hotel em St. Paul","cat":"hospedagem","place":"200 Seventh St W, St. Paul, MN 55102","notes":"Depois do check-out, voo Delta DL 2764 às 10:20 para Nova York (LaGuardia), onde ficam até o embarque em 04/01.","tz":"America/Chicago","dur":30,"who":[],"book":""},{"id":"ny14","date":"2027-01-04","time":"14:00","title":"Embarque no Norwegian Bliss","cat":"cruzeiro","place":"Porto de Nova York","notes":"Estar a bordo até 14:00; o navio parte às 16:00. Cruzeiro de 12 dias no Caribe, ida e volta por Nova York. Extras: internet, pacote de bar, jantares de especialidade e crédito de excursão.","tz":"America/New_York","dur":120,"who":[]},{"id":"ny15","date":"2027-01-07","time":"11:00","title":"Parada em Puerto Plata","cat":"cruzeiro","place":"Puerto Plata, República Dominicana","notes":"Chegada 11:00, saída 19:00 (navio atracado). Dias 5 e 6 em alto-mar.","tz":"America/Puerto_Rico","dur":480,"who":[]},{"id":"ny16","date":"2027-01-08","time":"11:00","title":"Parada em San Juan","cat":"cruzeiro","place":"San Juan, Porto Rico","notes":"Chegada 11:00, saída 19:00 (navio atracado).","tz":"America/Puerto_Rico","dur":480,"who":[]},{"id":"ny17","date":"2027-01-09","time":"09:00","title":"Parada em Basseterre","cat":"cruzeiro","place":"Basseterre, St. Kitts e Nevis","notes":"Chegada 09:00, saída 18:00 (navio atracado).","tz":"America/Puerto_Rico","dur":540,"who":[]},{"id":"ny18","date":"2027-01-10","time":"07:00","title":"Parada em Tortola","cat":"cruzeiro","place":"Road Town, Tortola, Ilhas Virgens Britânicas","notes":"Chegada 07:00, saída 18:00 (navio atracado).","tz":"America/Puerto_Rico","dur":660,"who":[]},{"id":"ny19","date":"2027-01-11","time":"07:00","title":"Parada em Philipsburg","cat":"cruzeiro","place":"Philipsburg, St. Maarten","notes":"Chegada 07:00, saída 18:00 (navio atracado).","tz":"America/Puerto_Rico","dur":660,"who":[]},{"id":"ny20","date":"2027-01-12","time":"07:00","title":"Parada em St. Thomas","cat":"cruzeiro","place":"Charlotte Amalie, St. Thomas, Ilhas Virgens Americanas","notes":"Chegada 07:00, saída 18:00 (navio atracado). Depois, 13 a 15/01 em alto-mar de volta a Nova York.","tz":"America/Puerto_Rico","dur":660,"who":[]},{"id":"ny21","date":"2027-01-16","time":"07:00","title":"Desembarque em Nova York","cat":"cruzeiro","place":"Porto de Nova York","notes":"O navio chega às 07:00. O voo de volta sai às 19:30 de Newark.","tz":"America/New_York","dur":60,"who":[]},{"id":"ny22","date":"2027-01-16","time":"19:30","title":"Voo UA 149 Newark → São Paulo","cat":"voo","place":"EWR → GRU (chega 07:10 de 17/01)","notes":"Boeing 787-9, 9h40. Assentos de Carlos, Sabrina e Alice: 31A, 31B, 31C. Assentos de Ubirajara e Carlene a informar.","tz":"America/New_York","dur":580,"who":[]},{"id":"ny23","date":"2027-01-17","time":"09:15","title":"Voo G3 1490 São Paulo → Goiânia","cat":"voo","place":"GRU → GYN (chega 10:50)","notes":"Boeing 737-800, 1h35. Assentos de Carlos, Sabrina e Alice: ainda não escolhidos. Assentos de Ubirajara e Carlene a informar.","tz":"America/Sao_Paulo","dur":95,"who":[]},{"id":"ny-gallaghers","date":"2027-01-02","time":"16:30","title":"Jantar no Gallaghers Steakhouse","cat":"refeicao","place":"Gallaghers Steakhouse, 228 W 52nd St, New York, NY 10019","notes":"Churrascaria clássica de Nova York, aberta em 1927, conhecida pela câmara de maturação de carnes à vista da rua. Fica no Theater District. Abre todos os dias a partir das 11:45. Telefone: (212) 586-5000. Para 5 pessoas, reservar com antecedência.","tz":"America/New_York","dur":120,"who":[],"lat":40.7628531,"lng":-73.9838317,"book":"https://www.opentable.com/gallaghers-steakhouse-manhattan"},{"id":"ny-eataly","date":"2027-01-03","time":"12:30","title":"Almoço no Eataly Flatiron","cat":"refeicao","place":"Eataly, 200 5th Ave, New York, NY 10010","notes":"Mercado italiano com vários restaurantes e balcões. O La Pizza & La Pasta aceita reserva; os balcões funcionam por ordem de chegada. Dá para emendar com o Flatiron Building e o Madison Square Park, em frente.","tz":"America/New_York","dur":90,"who":[],"lat":40.742213,"lng":-73.9895802,"book":"https://www.opentable.com/r/la-pizza-and-la-pasta-eataly-nyc-flatiron-new-york"},{"id":"ny-hotel","date":"2027-01-01","time":"16:00","title":"Check-in Tempo by Hilton Times Square: quarto de Carlos, Sabrina e Alice","cat":"hospedagem","place":"1568 Broadway, New York, NY 10036","notes":"Quarto com 2 camas Queen para Carlos Macedo (2 adultos, 1 criança). Tempo by Hilton New York Times Square, 1568 Broadway. Check-in a partir das 16h de sex., 01/01 (o voo chega ao LGA às 14:05, então vale pedir à recepção para guardar as malas). Check-out seg., 04/01 às 11h. Tarifa não reembolsável e sem alteração. Idade mínima para o check-in: 21. Hotel não fumante. Recomendam baixar o app Hilton antes do check-in.","tz":"America/New_York","dur":30,"who":["p-carlos","p-sabrina","p-alice"]},{"id":"ny-dl2764","date":"2027-01-01","time":"10:20","cat":"voo","tz":"America/Chicago","title":"Voo DL 2764 Minneapolis/St. Paul → Nova York (LaGuardia)","place":"MSP Terminal 1 → LGA Terminal C (chega 14:05)","notes":"Delta Air Lines, Airbus A320, 2h45, sem escalas. Reserva (bilhete não reembolsável). Assentos de Carlos, Sabrina e Alice: 18A, 18B, 18C. Assentos de Ubirajara e Carlene: 18D e 18E. Portões ainda não definidos.","dur":165,"who":[]},{"id":"ny-hotel-ub","date":"2027-01-01","time":"16:00","title":"Check-in Tempo by Hilton Times Square: quarto de Ubirajara e Carlene","cat":"hospedagem","place":"1568 Broadway, New York, NY 10036","tz":"America/New_York","dur":30,"who":["p-ubirajara","p-carlene"],"notes":"Quarto com 1 cama King para Ubirajara Abbud (2 adultos). Tempo by Hilton New York Times Square, 1568 Broadway. Check-in a partir das 16h de sex., 01/01 (o voo chega ao LGA às 14:05, então vale pedir à recepção para guardar as malas). Check-out seg., 04/01 às 11h. Tarifa não reembolsável e sem alteração. Idade mínima para o check-in: 21. Hotel não fumante. Recomendam baixar o app Hilton antes do check-in."},{"id":"ny-hotel-out","date":"2027-01-04","time":"11:00","title":"Check-out do Tempo by Hilton Times Square","cat":"hospedagem","place":"1568 Broadway, New York, NY 10036","tz":"America/New_York","dur":30,"who":[],"notes":"Os dois quartos. O embarque no Norwegian Bliss é até as 14:00, então o check-out às 11h deixa tempo para ir ao porto."}],"todo":[{"id":"td1","text":"Hotel em Nova York reservado (Tempo by Hilton Times Square, 01 a 04/01)","done":true,"who":""},{"id":"td-ncl-ub","text":"Informar reserva e cabine do cruzeiro de Ubirajara e Carlene","done":false,"who":""},{"id":"td2","text":"Fazer o check-in online da NCL dos 5 (aberto até 3 dias antes, ou seja, até 01/01)","done":false,"who":""},{"id":"td3","text":"Escolher assentos dos voos GOL G3 1491 e G3 1490","done":false,"who":""},{"id":"td4","text":"Conferir passaportes (validade mínima de 6 meses) e os vistos americanos","done":false,"who":""},{"id":"td5","text":"Contratar seguro viagem com cobertura de cancelamento","done":false,"who":""},{"id":"td6","text":"Decidir sobre o hotel de St. Paul até 23/12 (cancelamento grátis)","done":false,"who":""},{"id":"td7","text":"Escolher passeios nos 6 portos e usar o crédito de excursão","done":false,"who":""},{"id":"td8","text":"Comprar ingressos do Space Center Houston para 29/12","done":false,"who":""},{"id":"td9","text":"Confirmar horários da Violet K-pop (Webster) e do Killen's para terça, 29/12","done":false,"who":""},{"id":"td10","text":"Informar números de reserva e assentos dos voos de Ubirajara e Carlene","done":false,"who":""},{"id":"td11","text":"Conferir se o seguro viagem cobre a idade (82 anos)","done":false,"who":"p-ubirajara"},{"id":"td12","text":"Pedir assistência no aeroporto, se for útil (cadeira de rodas ou carrinho elétrico)","done":false,"who":"p-ubirajara"},{"id":"td13","text":"Conferir se o seguro viagem cobre a idade (74 anos)","done":false,"who":"p-carlene"},{"id":"td14","text":"Informar a validade dos passaportes na aba Viajantes","done":false,"who":""},{"id":"td-houston-ritmo","text":"Combinar o ritmo do dia em Houston com Ubirajara e Carlene (dá para encurtar a NASA e descansar no aeroporto)","done":false,"who":""},{"id":"td15","text":"Reservas do cruzeiro, hotel e voos anotadas","done":true,"who":""}],"ideas":[{"id":"id1","text":"Passeio pelo campus da University of Minnesota, onde a Carolina se formou","place":"University of Minnesota, Minneapolis, MN","link":"","notes":"Com a Carolina como guia."},{"id":"id2","text":"Mall of America e o parque coberto Nickelodeon Universe","place":"Mall of America, Bloomington, MN","link":"https://www.mallofamerica.com","notes":"O maior shopping dos EUA, com parque de diversões coberto. Bom programa para o frio e para a Alice."},{"id":"id3","text":"Cachoeira Minnehaha no inverno","place":"Minnehaha Falls, Minneapolis, MN","link":"","notes":"No inverno a queda d'água costuma congelar. Agasalho reforçado."},{"id":"id4","text":"Catedral de St. Paul e Capitólio de Minnesota","place":"Cathedral of Saint Paul, St. Paul, MN","link":"","notes":"Ficam perto do hotel."}],"pack":[{"id":"pk1","group":"Documentos","done":false,"who":"p-carlos","text":"Passaporte e visto americano"},{"id":"pk2","group":"Documentos","done":false,"who":"p-sabrina","text":"Passaporte e visto americano"},{"id":"pk3","group":"Documentos","done":false,"who":"p-alice","text":"Passaporte e visto americano"},{"id":"pk4","group":"Documentos","done":false,"who":"p-ubirajara","text":"Passaporte e visto americano"},{"id":"pk5","group":"Documentos","done":false,"who":"p-carlene","text":"Passaporte e visto americano"},{"id":"pk6","group":"Documentos","done":false,"who":"","text":"Reservas impressas (voos, hotel, cruzeiro)"},{"id":"pk7","group":"Documentos","done":false,"who":"","text":"Apólice do seguro viagem"},{"id":"pk8","group":"Documentos","done":false,"who":"","text":"Cartões internacionais"},{"id":"pk9","group":"Frio: Minnesota e Nova York","done":false,"who":"","text":"Casacos de inverno impermeáveis"},{"id":"pk10","group":"Frio: Minnesota e Nova York","done":false,"who":"","text":"Roupa térmica (segunda pele)"},{"id":"pk11","group":"Frio: Minnesota e Nova York","done":false,"who":"","text":"Gorro, luvas e cachecol"},{"id":"pk12","group":"Frio: Minnesota e Nova York","done":false,"who":"","text":"Botas impermeáveis com sola antiderrapante"},{"id":"pk13","group":"Frio: Minnesota e Nova York","done":false,"who":"","text":"Meias grossas"},{"id":"pk14","group":"Calor: Caribe e navio","done":false,"who":"","text":"Roupas de banho"},{"id":"pk15","group":"Calor: Caribe e navio","done":false,"who":"","text":"Protetor solar e repelente"},{"id":"pk16","group":"Calor: Caribe e navio","done":false,"who":"","text":"Óculos de sol e chapéu"},{"id":"pk17","group":"Calor: Caribe e navio","done":false,"who":"","text":"Sandálias e chinelos"},{"id":"pk18","group":"Calor: Caribe e navio","done":false,"who":"","text":"Roupa para os jantares no navio"},{"id":"pk19","group":"Calor: Caribe e navio","done":false,"who":"","text":"Bolsa estanque para o celular"},{"id":"pk20","group":"Saúde e crianças","done":false,"who":"p-ubirajara","text":"Remédios de uso contínuo e receitas médicas"},{"id":"pk21","group":"Saúde e crianças","done":false,"who":"p-carlene","text":"Remédios de uso contínuo e receitas médicas"},{"id":"pk22","group":"Saúde e crianças","done":false,"who":"","text":"Remédio para enjoo"},{"id":"pk23","group":"Saúde e crianças","done":false,"who":"p-alice","text":"Itens e brinquedos da Alice"},{"id":"pk24","group":"Eletrônicos","done":false,"who":"","text":"Adaptador de tomada padrão americano"},{"id":"pk25","group":"Eletrônicos","done":false,"who":"","text":"Carregadores e bateria externa"},{"id":"pk26","group":"Geral","done":false,"who":"","text":"Bolsa leve para o dia em Houston (as malas ficam despachadas)"},{"id":"pk27","group":"Geral","done":false,"who":"","text":"App do Uber instalado e com cartão internacional"}],"ports":[{"port":"Puerto Plata","key":"puertoplata","re":"puerto plata","dock":"Taino Bay Cruise Port (navios da NCL costumam atracar aqui; Amber Cove, a 15–20 min de carro, é usado só eventualmente — confirmem no app da NCL na véspera).","walkable":"O terminal fica colado ao centro histórico: 10–15 min a pé até a Calle de las Sombrillas, com riquixás gratuitos no porto. O teleférico de Puerto Plata está fechado desde junho de 2024, com reabertura prevista só para 2028.","suggestions":[{"title":"Centro histórico: Calle de las Sombrillas, Parque Central e Fortaleza San Felipe","desc":"Passeio curto e plano pelo centro colonial, com a rua dos guarda-chuvas coloridos (ótima para fotos), a catedral e o Parque Central. Os avós podem ir de riquixá até o centro e descansar nos cafés à sombra enquanto o resto da família explora.","duration":"2–3 h","effort":"fácil","forWho":"Todos, inclusive Ubirajara e Carlene","place":"Calle de la Sombrillas, Puerto Plata","link":"https://www.royalcaribbean.com/guides/things-to-do-puerto-plata-dominican-republic"},{"title":"Ocean World Adventure Park (golfinhos e leões-marinhos)","desc":"Parque marinho em Cofresí com shows e encontros pagos com golfinhos, leões-marinhos e tubarões. Programas interativos exigem reserva e têm custo extra; confirmem horários e preços, pois as fontes divergem sobre os dias de funcionamento.","duration":"4–6 h (com traslado)","effort":"moderado","forWho":"Alice e os pais; avós assistem aos shows sentados","place":"Ocean World Adventure Park, Cofresí, Puerto Plata","link":"https://www.aaa.com/tripcanvas/attraction/ocean-world-adventure-park-VA1561"},{"title":"Trilha e banho nas cachoeiras de Damajagua","desc":"Excursões a partir de Taino Bay levam a trilhas com banho em piscinas naturais e cachoeiras no interior. Exige caminhada em terreno irregular e molhado.","duration":"4–5 h","effort":"puxado","forWho":"Carlos, Sabrina e Alice","place":"27 Charcos de Damajagua, Imbert","link":"https://shoreexcursioneer.com/taino-bay/puerto-plata-waterfall-hike-swim.html"},{"title":"Estrutura do próprio porto Taino Bay","desc":"O porto tem lojas, bares, área de praia e, segundo a Cruise Critic, piscina e rio lento. Boa opção para os avós ficarem perto do navio; confirmem no porto o que está aberto e se há cobrança.","duration":"1–3 h","effort":"fácil","forWho":"Avós e quem quiser um dia tranquilo","place":"Taino Bay Cruise Port, Puerto Plata","link":"https://www.cruisecritic.com/articles/taino-bay-cruise-port-teminal-information"}],"food":"Provem o mangú (purê de banana-da-terra) ou o almoço típico 'La Bandera' (arroz, feijão e carne), além de café e chocolate dominicanos. Há bares e restaurantes dentro do porto e cafés no centro histórico.","tip":"A moeda é o peso dominicano, mas o dólar é aceito nas áreas turísticas. O navio chega às 11h, no calor do meio-dia: levem água, chapéu e protetor.","sources":["https://www.cruisehive.com/puerto-plata-cruise-port/138690","https://diariolibre.com/economia/turismo/2026/03/30/anuncian-rehabilitacion-del-teleferico-de-puerto-plata-por-us20-mm/3486816","https://www.cruisecritic.com/articles/taino-bay-cruise-port-teminal-information","https://www.royalcaribbean.com/guides/things-to-do-puerto-plata-dominican-republic"]},{"port":"San Juan","key":"sanjuan","re":"san juan","dock":"Píeres de cruzeiro de Old San Juan; a NCL às vezes usa o Pan American Pier, em Isla Grande (10 min de táxi). Confirmem o píer na véspera.","walkable":"Em Old San Juan a cidade histórica começa em frente ao píer, mas as ruas sobem ladeiras até El Morro. O trolley gratuito aparece como fora de serviço em guias de 2026.","suggestions":[{"title":"Old San Juan em carro vintage aberto (NCL SJU_73)","desc":"Passeio de cerca de 2 horas em veículo vintage aberto, passando por El Morro, San Cristóbal e La Fortaleza, com música e comentários históricos. Quase todo embarcado: dá para ver a cidade sem subir as ladeiras.","duration":"~2 h","effort":"fácil","forWho":"Todos, especialmente Ubirajara e Carlene","place":"Castillo San Felipe del Morro, San Juan","link":"https://www.ncl.com/br/pt/shore-excursions/SJU_73/Old-San-Juan-Vintage-Open-Air-City-Tour"},{"title":"Castillo San Felipe del Morro (El Morro)","desc":"Forte espanhol do século XVI com vista para o Atlântico e um gramado enorme onde famílias empinam pipa. Há rampas e escadas; vão de táxi até a entrada e confiram os horários no site do NPS.","duration":"1,5–2 h","effort":"moderado","forWho":"Alice e os pais; avós no gramado e na entrada","place":"Castillo San Felipe del Morro, San Juan","link":"https://www.nps.gov/saju/index.htm"},{"title":"Casa Bacardí pelo ferry de Cataño","desc":"O ferry sai do Pier 2, ao lado dos píeres de cruzeiro, e cruza a baía em 12–15 minutos até a destilaria. Programa mais adulto; os passeios lotam, então reservem antes.","duration":"2,5–3 h","effort":"moderado","forWho":"Carlos e Sabrina","place":"Casa Bacardí, Cataño, Puerto Rico","link":"https://www.bacardi.com/us/en/casa-bacardi/"},{"title":"Praia El Escambrón","desc":"Praia de águas calmas, protegida por recife, a poucos minutos de táxi de Old San Juan. Boa para um banho de mar com a Alice no fim da tarde, já que o navio só sai às 19h.","duration":"2–3 h","effort":"fácil","forWho":"Alice e os pais; avós à sombra","place":"Balneario El Escambrón, San Juan","link":""}],"food":"Provem mofongo (banana-da-terra pilada com alho, recheada de carne ou frutos do mar) e as piraguas (raspadinhas) vendidas nas praças.","tip":"A moeda é o dólar e o Uber funciona em San Juan. Os paralelepípedos azuis são irregulares e escorregadios: calçados firmes para os avós, e nada de subir a pé até El Morro.","sources":["https://www.ncl.com/shore-excursions/SJU_73/Old-San-Juan-Vintage-Open-Air-City-Tour","https://sanjuanpuertorico.com/trolley-old-san-juan/","https://www.nps.gov/elmo/planyourvisit/conditions.htm","https://puertoricoferry.com/en/2026/07/14/bienvenidos-a-casa-bacardi/"]},{"port":"Basseterre, St. Kitts","key":"basseterre","re":"basseterre","dock":"Port Zante, o terminal de cruzeiros de Basseterre.","walkable":"Sim: 5–10 min de caminhada plana até o centro, The Circus e Independence Square. Brimstone Hill e praias exigem táxi ou passeio.","suggestions":[{"title":"St. Kitts Scenic Railway (NCL BAS_12)","desc":"Trem histórico da antiga ferrovia do açúcar, com deck aberto em cima e salão com ar-condicionado, bebidas e música embaixo. Volta pela ilha com vista de Nevis e de Brimstone Hill, tudo sentado.","duration":"~3 h","effort":"fácil","forWho":"Todos; ideal para Ubirajara e Carlene no andar climatizado. Confirmem com a NCL que segue operando.","place":"St. Kitts Scenic Railway, Needsmust, St. Kitts","link":"https://www.ncl.com/shore-excursions/BAS_12/St-Kitts-Scenic-Rail%20"},{"title":"Catamarã até Nevis com snorkel e Pinney's Beach (NCL BAS_28)","desc":"Catamarã com parada para snorkel e travessia do canal The Narrows até Nevis, ancorando na Pinney's Beach. Levem roupa de banho, toalha e protetor.","duration":"~4 h","effort":"moderado","forWho":"Alice, Carlos e Sabrina","place":"Pinney's Beach, Nevis","link":"https://www.ncl.com/shore-excursions/BAS_28/Nevis-Sailaway"},{"title":"Brimstone Hill Fortress (Patrimônio da UNESCO)","desc":"Fortaleza no alto de um morro, a uns 30 min de carro, com vista espetacular. Tem rampas e escadas; para os avós, só se o carro deixar perto da entrada.","duration":"2–3 h","effort":"moderado","forWho":"Alice e os pais; avós com cautela","place":"Brimstone Hill Fortress National Park, St. Kitts","link":""},{"title":"Port Zante e The Circus a pé","desc":"Volta curta e plana do shopping do porto até a praça The Circus, com o relógio vitoriano e a Independence Square. Ritmo calmo, com paradas à sombra.","duration":"1–2 h","effort":"fácil","forWho":"Avós e quem quiser um dia leve","place":"The Circus, Basseterre","link":""}],"food":"Provem o prato nacional, saltfish com banana-da-terra apimentada e dumplings, ou a 'goat water' (ensopado de cabrito).","tip":"A moeda é o dólar do Caribe Oriental, mas o dólar americano é aceito em quase tudo; levem notas pequenas. Mão inglesa: cuidado ao atravessar.","sources":["https://www.princess.com/blog/st-kitts-things-to-do-near-cruise-port","https://www.ncl.com/shore-excursions/BAS_12/St-Kitts-Scenic-Rail%20","https://yourmileagemayvary.com/2025/09/17/riding-the-st-kitts-scenic-railway-our-cruise-excursion/","https://www.ncl.com/shore-excursions/BAS_28/Nevis-Sailaway"]},{"port":"Road Town, Tortola","key":"tortola","re":"tortola","dock":"Píer de cruzeiros de Road Town, junto ao Tortola Pier Park.","walkable":"Sim: o Pier Park, com lojas e restaurantes, fica no fim do píer, e o centro está a 10–15 min de caminhada. 10/01 é domingo, então o shuttle gratuito da prefeitura provavelmente não roda.","suggestions":[{"title":"Mirantes e Cane Garden Bay (NCL TOV_02)","desc":"Passeio de carro pelas montanhas com mirantes de Tortola e das ilhas vizinhas, terminando com cerca de 1 hora na Cane Garden Bay. Os avós veem tudo sentados e ficam à sombra na praia.","duration":"3–4 h","effort":"fácil","forWho":"Todos, inclusive os avós","place":"Cane Garden Bay, Tortola","link":"https://app.ncl.com/shore-excursions/TOV_02/Paradise-Views-Beach"},{"title":"Dia de praia em Cane Garden Bay por conta própria","desc":"A praia mais clássica de Tortola, de águas calmas e bares pé na areia, a 20–25 min de táxi. Cadeiras e guarda-sóis são alugados lá.","duration":"4–5 h","effort":"fácil","forWho":"Família toda, especialmente Alice","place":"Cane Garden Bay Beach, Tortola","link":""},{"title":"Virgin Gorda e The Baths (NCL TOV_11)","desc":"Barco de cerca de 30 min até Virgin Gorda para explorar as formações de granito, com grutas e piscinas naturais. Exige passar entre pedras e escadinhas: aventura para Alice e os pais, não para os avós.","duration":"4–5 h","effort":"puxado","forWho":"Alice, Carlos e Sabrina","place":"The Baths National Park, Virgin Gorda","link":"https://www.ncl.com/no/en/excursions/search?Ntt=TOV_11"}],"food":"Provem o 'fungi' (polenta de milho com quiabo) com peixe ensopado. O Pusser's Road Town Pub, perto do píer, é um clássico com cardápio variado para famílias.","tip":"A moeda é o dólar americano. Táxis cobram por pessoa (cerca de US$ 10–16 até Cane Garden Bay); combinem o preço antes. Mão inglesa e estradas muito íngremes.","sources":["https://www.cruisehive.com/tortola-cruise-port/145549","https://app.ncl.com/shore-excursions/TOV_02/Paradise-Views-Beach","https://pussers.com/our-locations/pussers-road-town-pub"]},{"port":"Philipsburg, St. Maarten","key":"philipsburg","re":"philipsburg","dock":"Dr. A.C. Wathey Cruise Facility, em Great Bay.","walkable":"Em parte: o centro fica a cerca de 1,5 km, 15–25 min a pé sob sol forte. O water taxi cruza a baía em 5 min e deixa direto no calçadão.","suggestions":[{"title":"Water taxi, calçadão de Great Bay e Front Street","desc":"Atravessem a baía de water taxi e passeiem pelo calçadão plano à beira-mar, com lojas, sorveterias e bares de praia com cadeiras à sombra. Os avós podem ficar de frente para o mar enquanto os outros fazem compras.","duration":"2–4 h","effort":"fácil","forWho":"Todos, ideal para Ubirajara e Carlene","place":"Great Bay Beach Boardwalk, Philipsburg","link":"https://www.visitstmaarten.com/todo/one-day-visit-st-maarten-cruise/"},{"title":"Maho Beach (aviões passando rente)","desc":"Praia ao lado da cabeceira do aeroporto, onde os aviões passam a poucos metros das cabeças. Cuidado com o jato das turbinas na decolagem: nada de ficar atrás da cerca.","duration":"2–3 h (com táxi)","effort":"fácil","forWho":"Alice e os pais","place":"Maho Beach, Sint Maarten","link":""},{"title":"Rainforest Adventures: teleférico Sky Explorer e tirolesas","desc":"Teleférico de cadeira até o alto do Sentry Hill e tirolesas, incluindo a Flying Dutchman, anunciada como a mais íngreme do mundo. Confiram idade, altura e peso mínimos antes de reservar.","duration":"3–4 h","effort":"moderado","forWho":"Alice e os pais","place":"Rainforest Adventures St Maarten, Rockland Estate","link":"https://rainforestadventure.com/package/sentry-hill-zip-schooner/"},{"title":"Orient Beach no lado francês (NCL PHI_44)","desc":"Tarde de praia na Orient Bay, com cadeiras e estrutura de beach club organizada pela NCL.","duration":"~4 h","effort":"fácil","forWho":"Família toda; avós à sombra","place":"Orient Bay Beach, Saint Martin","link":"https://app.ncl.com/shore-excursions/PHI_44/Afternoon-Beach-Bash"}],"food":"Provem johnnycakes e peixe grelhado nos bares do calçadão. O licor de guavaberry, símbolo da ilha, é lembrança para os adultos.","tip":"O dólar americano é aceito na ilha toda, inclusive no lado francês. Pouca sombra no caminho do píer ao centro: usem o water taxi com os avós.","sources":["https://www.beyondships3.com/st-maarten-walking-to-philipsburg.html","https://www.visitstmaarten.com/todo/one-day-visit-st-maarten-cruise/","https://rainforestadventure.com/package/sentry-hill-zip-schooner/","https://app.ncl.com/shore-excursions/PHI_44/Afternoon-Beach-Bash"]},{"port":"St. Thomas","key":"stthomas","re":"st\\. thomas","dock":"Havensight (West India Company Dock) é o padrão da NCL; Crown Bay é a alternativa. Confirmem na véspera.","walkable":"Havensight fica longe do centro de Charlotte Amalie: vão de táxi. O shopping de Havensight e o Skyride ficam em frente ao píer.","suggestions":[{"title":"Coral World Ocean Park (NCL STT_01)","desc":"Parque marinho em Coki Point com tanques de recife, tartarugas, tubarões e arraias, piscina de toque e alimentação de lóris. O observatório subaquático tem uma escada em caracol; os avós podem pular essa parte.","duration":"~3,5 h","effort":"fácil","forWho":"Todos: o grande programa da Alice, e os avós aproveitam as áreas planas","place":"Coral World Ocean Park, Coki Point, St. Thomas","link":"https://www.ncl.com/shore-excursions/STT_01/Coral-World-Ocean-Park%20"},{"title":"Skyride to Paradise Point (NCL STT_17)","desc":"Bondinho em frente ao Havensight Mall que sobe a uns 210 m, com vista do porto e dos navios, e restaurante e lojinhas no alto. Está operando, mas a entrada tem 36 degraus e não é acessível para cadeira de rodas.","duration":"1–2 h","effort":"moderado","forWho":"Alice e os pais; avós só se subirem 36 degraus sem ajuda","place":"Skyride to Paradise Point, St. Thomas","link":"https://www.paradisepointvi.com/"},{"title":"Drake's Seat, Magens Bay e Skyride (NCL STT_98)","desc":"Mirante Drake's Seat, tempo livre na Magens Bay, uma das praias mais famosas do Caribe, de águas calmas, e o Skyride. A NCL informa que não é indicado para quem usa cadeira de rodas, andador ou bengala.","duration":"~4 h","effort":"moderado","forWho":"Alice, Carlos e Sabrina","place":"Magens Bay Beach, St. Thomas","link":"https://www.ncl.com/shore-excursions/STT_98/Skyride-To-Paradise-Point-Magens-Bay-Beach-Scenic-Views"}],"food":"Provem os pâtés (pastéis fritos recheados) e johnnycakes. O restaurante no alto do Paradise Point é prático e tem vista.","tip":"A moeda é o dólar e a mão é inglesa. Táxis são 'safari' abertos, com preço por pessoa (cerca de US$ 20 dos píeres até o Coral World). Como é território americano, vale o mesmo visto do embarque.","sources":["https://www.beyondships3.com/st-thomas-cruise-port.html","https://www.paradisepointvi.com/","https://coralworldvi.com/plan-your-visit/","https://www.ncl.com/shore-excursions/STT_98/Skyride-To-Paradise-Point-Magens-Bay-Beach-Scenic-Views"]}],"dining":{"ship":"Norwegian Bliss","packageNote":"A reserva inclui 4 jantares de especialidade para Carlos e Sabrina e um pacote infantil de 4 refeições para a Alice. Crianças até 12 anos comem de graça nas especialidades pelo menu infantil; com o pacote, a Alice pode pedir do cardápio adulto. O pacote vale em Cagney's, Teppanyaki, La Cucina, Le Bistro, Palomar, Q Texas Smokehouse e Food Republic. Confirmem a lista no app da NCL, se o Teppanyaki cobra das crianças, e se Ubirajara e Carlene terão pacote próprio.","restaurants":[{"name":"Manhattan Room","type":"incluso","cuisine":"Restaurante principal, só jantar","deck":"7","desc":"Salão principal de pé-direito duplo, com grandes janelas na popa, música ao vivo e pista de dança. É o mais elegante dos três restaurantes principais.","menu":["Shrimp Fettuccini Alfredo (fettuccine com camarão ao molho Alfredo, todas as noites)","Grilled New York Strip Steak (contrafilé grelhado)","Herb-Crusted Chicken (frango em crosta de ervas)","Montreal Spice Rubbed Brisket (peito bovino com tempero Montreal)","Breaded Flounder (linguado empanado)","3-Cheese Baked Ziti (massa gratinada com três queijos)","Warm Chocolate Lava Cake (petit gâteau)","Honey Crème Brûlée (crème brûlée de mel)"],"kids":"Tem menu infantil, mas a Alice come bem no cardápio adulto."},{"name":"Savor","type":"incluso","cuisine":"Restaurante principal","deck":"6","desc":"Restaurante principal mais intimista, com cardápio rotativo no café da manhã, almoço e jantar.","menu":["Shrimp Fettuccini Alfredo (fettuccine com camarão)","Grilled New York Strip Steak (contrafilé grelhado)","Chicken Piccata (frango ao molho de limão e alcaparras)","Grilled Tilapia (tilápia grelhada)","Pork Spare Ribs (costelinha de porco)","Shrimp Cake (bolinho de camarão)","Bruschetta (pão tostado com tomate)","Warm Chocolate Lava Cake (petit gâteau)"],"kids":"Menu infantil disponível."},{"name":"Taste","type":"incluso","cuisine":"Restaurante principal","deck":"6","desc":"Restaurante principal de ambiente contemporâneo, com o mesmo cardápio rotativo dos outros salões e uma sala privativa para grupos.","menu":["Shrimp Fettuccini Alfredo (fettuccine com camarão)","Herb-Crusted Chicken (frango em crosta de ervas)","Montreal Spice Rubbed Brisket (peito bovino com tempero Montreal)","Breaded Flounder (linguado empanado)","3-Cheese Baked Ziti (massa gratinada com três queijos)","Honey Crème Brûlée (crème brûlée de mel)","Cannoli (canudinho siciliano recheado)"],"kids":"Menu infantil disponível."},{"name":"Garden Café","type":"incluso","cuisine":"Buffet internacional","deck":"16","desc":"Buffet grande e informal, com área ao ar livre e muitas estações de café da manhã, almoço e jantar. O mais prático para refeições rápidas entre as atividades.","menu":[],"kids":"Ótimo para crianças pela variedade e liberdade de escolha."},{"name":"The Local Bar & Grill","type":"incluso","cuisine":"Pub americano-britânico","deck":"7","desc":"Pub com TVs de esportes, aberto praticamente 24 horas. A comida é incluída; bebidas especiais são cobradas.","menu":["Fish and Chips (peixe empanado com batata frita)","Reuben Sandwich (sanduíche de pastrami com chucrute e queijo suíço)","Loaded Nachos (nachos com coberturas)","Chicken Wings (asinhas de frango)","Pretzel Bites with Beer Cheese Fondue (pretzels com fondue de queijo)","English Breakfast (café da manhã inglês)","Hot Fudge Sundae (sundae com calda quente de chocolate)","Brownie-Raspberry Swirl Cheesecake (cheesecake de brownie com framboesa)"],"kids":"Bom para um lanche fora de hora."},{"name":"American Diner","type":"incluso","cuisine":"Lanchonete americana","deck":"","desc":"Diner no estilo americano clássico, incluído na tarifa. Os milkshakes são cobrados à parte.","menu":["The Wrangler Burger (hambúrguer estilo western)","Pulled Pork Sliders (minissanduíches de porco desfiado)","Homemade Meatloaf (bolo de carne caseiro)","Spaghetti and Meatballs (espaguete com almôndegas)","Smoked Fish Dip (pasta de peixe defumado)","Bread Pudding (pudim de pão)","Housemade Milkshakes (milkshakes da casa)"],"kids":"Hambúrguer, espaguete com almôndegas e milkshake: a cara da Alice."},{"name":"Cagney's Steakhouse","type":"especialidade","cuisine":"Steakhouse americana","deck":"8","desc":"A steakhouse clássica da NCL, ampliada na reforma de 2025. Conhecida pelos cortes nobres e pelas sobremesas enormes.","menu":["Lobster Bisque (creme de lagosta)","Grilled Thick-Cut Bacon (bacon grosso grelhado)","Jumbo Shrimp Cocktail (coquetel de camarões grandes)","Crab Cake (bolinho de caranguejo)","16 oz Rib Eye (ancho de cerca de 450 g)","8 oz Filet Mignon (filé mignon de cerca de 225 g)","Seven Layer Chocolate Cake (bolo de chocolate de sete camadas)","OMG Caramel Butterscotch Cheesecake (cheesecake de caramelo)"],"kids":"Com o pacote, a Alice pode pedir do cardápio adulto; o filé mignon costuma agradar."},{"name":"Teppanyaki","type":"especialidade","cuisine":"Japonesa (chapa hibachi)","deck":"6","desc":"Os chefs cozinham na chapa diante dos clientes, com malabarismos com facas e utensílios, em mesas compartilhadas e clima animado. Foi ampliado na reforma de 2025.","menu":["Miso Soup (sopa de missô com tofu e alga)","Seaweed Salad (salada de algas com molho de gengibre)","New York Strip (contrafilé na chapa)","Chicken Yaki Udon (udon salteado com frango)","Asuka (contrafilé com camarão grande)","Edo (vieiras com camarão grande)","Garlic Fried Rice (arroz frito com alho)","Green Tea Cake (bolo de chá verde)"],"kids":"O show do chef é provavelmente a melhor escolha do pacote da Alice. Reservem cedo: lota rápido."},{"name":"La Cucina","type":"especialidade","cuisine":"Italiana (toscana)","deck":"8","desc":"Trattoria de clima rústico, com massas, pizzas e clássicos como o ossobuco.","menu":["Mozzarella Caprese (muçarela, tomate e manjericão)","Calamari Fritti (lula frita)","Spaghetti Carbonara (espaguete à carbonara)","Risotto ai Funghi di Bosco (risoto de cogumelos silvestres)","Pollo Cacciatore (frango à caçadora)","Osso Bucco alla Milanese (ossobuco à milanesa)","Pizza Margherita","Tiramisu"],"kids":"Massas e pizzas: aposta segura para todos, inclusive os avós."},{"name":"Le Bistro","type":"especialidade","cuisine":"Francesa","deck":"17","desc":"O restaurante mais sofisticado e romântico do navio, com clássicos da cozinha francesa.","menu":["Escargots à la Bourguignonne (escargots na manteiga de alho)","Soupe à l'Oignon Gratinée (sopa de cebola gratinada)","Steak Tartare au Couteau (steak tartare)","Filet de Bœuf (filé mignon)","Coq au Vin (frango ao vinho tinto)","Sole Grenobloise (linguado com manteiga, alcaparras e limão)","Lobster Thermidor (lagosta gratinada)","Marquise au Chocolat (sobremesa densa de chocolate)"],"kids":"Mais formal: melhor para um jantar dos adultos."},{"name":"Palomar","type":"especialidade","cuisine":"Frutos do mar mediterrâneos","deck":"8","desc":"Novo em 2025, no lugar do antigo Ocean Blue. Ambiente claro e elegante, com peixes, frutos do mar e grelhados inspirados no Mediterrâneo.","menu":["Tuna Crudo (atum cru fatiado)","Grilled Octopus (polvo grelhado)","Greek Village Salad (salada grega)","Sea Scallops (vieiras)","Grilled Australian Lamb Chops (costeletas de cordeiro)","Patates Tiganites (batatas fritas à grega)","Galaktoboureko (torta grega de massa folhada com creme)","Whole Fish for Two (peixe inteiro para dois)"],"kids":"Cardápio mais adulto, focado em frutos do mar."},{"name":"Q Texas Smokehouse","type":"especialidade","cuisine":"Churrasco texano defumado","deck":"6","desc":"BBQ texano com carnes defumadas e música country ao vivo. Estreou justamente no Bliss.","menu":["Brisket (peito bovino defumado)","Pork Spare Ribs (costela de porco defumada)","Pitmaster Platter (brisket, costela, frango defumado e linguiça com jalapeño)","Lone Star Chili (chili texano)","Mac n' Cheese (macarrão com queijo)","Jalapeño Cheese Grits (canjiquinha cremosa com queijo)","Aunt Josie's Mason Jar Banana Pudding (pudim de banana no pote)","Peach Cobbler (torta de pêssego com sorvete)"],"kids":"Clima descontraído, costela e mac n' cheese: ótimo para a Alice."},{"name":"Food Republic","type":"especialidade","cuisine":"Fusão asiática e global","deck":"8","desc":"Pratinhos para compartilhar e sushi, com pedidos feitos por tablet na mesa.","menu":["Spicy Korean Fried Chicken (frango frito coreano picante)","Salt & Pepper Calamari (lula frita com sal e pimenta)","Peruvian Beef Skewers (espetinhos de carne peruanos)","Pork Belly Bao Buns (pãozinho bao com barriga de porco)","Shrimp Pad Thai (pad thai de camarão)","Kimchee Fried Rice (arroz frito com kimchi)","Dragon Roll (sushi)","Green Tea Jar (sobremesa de chá verde no pote)"],"kids":"Pedir pelo tablet diverte, e o frango coreano combina com a fã de K-pop."}],"sources":["https://profcruise.com/ncl-bliss-menus-2025/","https://cruiseindustrynews.com/cruise-news/2025/02/norwegian-bliss-completes-drydock-in-europe/","https://www.cruisemapper.com/ships/Norwegian-Bliss-1454","https://freestyletravelers.com/blog/ncl-cagneys-menu","https://freestyletravelers.com/blog/ncl-teppanyaki-menu","https://www.ncl.com/faq/cost-guests-under-18-specialty-restaurants"]},"shows":{"tip":"Com o jantar às 19:00 de sábado e o almoço às 12:30 de domingo, prefiram matinês: sábado entre 13:00 e 15:00 e domingo às 15:00. Comprem só pelos links oficiais e com antecedência: SIX, & Juliet e Stranger Things fazem a última apresentação em 03/01 e devem esgotar. Para desconto há a bilheteria TKTS em Times Square, no mesmo dia, e loterias digitais. Cheguem 30 a 45 minutos antes por causa da revista de bolsas e peçam lugares de corredor na plateia (orchestra) para os avós, evitando escadas.","shows":[{"name":"SIX: The Musical","theater":"Lena Horne Theatre","address":"256 West 47th Street, New York, NY 10036","genre":"Musical","desc":"As seis esposas de Henrique VIII viram estrelas pop num show que parece um concerto, com músicas no estilo de girl groups e divas do pop.","runtime":80,"age":"A partir de 10 anos","fit":"A cara da Alice: formato de show de girl group, curto, visual e fácil de acompanhar com pouco inglês. Último fim de semana em cartaz.","schedule":{"2027-01-02":["15:00","20:00"],"2027-01-03":["14:00"]},"scheduleNote":"Última apresentação na Broadway em 03/01. A sessão de sábado às 15:00 termina por volta das 16:20, antes do jantar.","tickets":"https://sixonbroadway.com/tickets/","site":"https://www.sixonbroadway.com/"},{"name":"& Juliet","theater":"Stephen Sondheim Theatre","address":"124 West 43rd Street, New York, NY 10036","genre":"Musical","desc":"Comédia que imagina o que Julieta faria se não morresse no final, contada com sucessos pop de Max Martin, de Britney Spears a Taylor Swift.","runtime":160,"age":"A partir de 8 anos","fit":"Hits pop que a família toda conhece, muito colorido e animado. Último fim de semana em cartaz.","schedule":{"2027-01-02":["14:00","20:00"],"2027-01-03":["15:00"]},"scheduleNote":"Última apresentação na Broadway em 03/01.","tickets":"https://andjulietbroadway.com/tickets/","site":"https://andjulietbroadway.com/"},{"name":"Maybe Happy Ending","theater":"Belasco Theatre","address":"111 West 44th Street, New York, NY 10036","genre":"Musical","desc":"Musical vencedor do Tony, criado por autores coreanos e ambientado em Seul, sobre dois robôs aposentados que descobrem a amizade e o amor.","runtime":100,"age":"A partir de 8 anos","fit":"A ambientação coreana atrai a fã de K-pop, e a história é delicada para todas as idades; tem mais diálogo e menos espetáculo visual.","schedule":{"2027-01-02":["14:00","19:00"],"2027-01-03":["14:00","19:00"]},"scheduleNote":"Sem intervalo; a sessão das 14:00 termina por volta das 15:40.","tickets":"https://www.telecharge.com/Maybe-Happy-Ending-Tickets","site":"https://www.maybehappyending.com/"},{"name":"The Lion King","theater":"Minskoff Theatre","address":"200 West 45th Street, New York, NY 10036","genre":"Musical","desc":"O Rei Leão da Disney, famoso pelos figurinos e marionetes de animais em tamanho real e pelas músicas de Elton John.","runtime":150,"age":"A partir de 6 anos","fit":"O mais visual da Broadway: não precisa de inglês e agrada dos 12 aos 82 anos.","schedule":{"2027-01-02":["14:00","19:30"],"2027-01-03":["15:00"]},"scheduleNote":"A sessão de domingo às 15:00 combina com o almoço das 12:30.","tickets":"https://www.ticketmaster.com/the-lion-king-new-york-ny-tickets/artist/1039581","site":"https://www.lionking.com/"},{"name":"Wicked","theater":"Gershwin Theatre","address":"222 West 51st Street, New York, NY 10019","genre":"Musical","desc":"A história das bruxas de Oz antes de Dorothy chegar, com a amizade entre Elphaba e Glinda, que inspirou os filmes recentes.","runtime":165,"age":"A partir de 8 anos","fit":"Cenário grandioso e músicas conhecidas dos filmes; vale ver o filme antes para acompanhar a história.","schedule":{"2027-01-02":["14:00","20:00"],"2027-01-03":["14:00"]},"scheduleNote":"No domingo só há a sessão das 14:00, apertada depois do almoço das 12:30.","tickets":"https://wickedthemusical.com/tickets/","site":"https://www.wickedthemusical.com/"},{"name":"Aladdin","theater":"New Amsterdam Theatre","address":"214 West 42nd Street, New York, NY 10036","genre":"Musical","desc":"O clássico da Disney no palco, com o Gênio, o tapete voador e canções como 'A Whole New World'.","runtime":150,"age":"A partir de 6 anos","fit":"Colorido, engraçado e com músicas conhecidas; o tapete voador encanta todas as idades.","schedule":{"2027-01-02":["14:00","19:30"],"2027-01-03":["15:00"]},"scheduleNote":"","tickets":"https://www.ticketmaster.com/Aladdin-tickets/artist/1858715?brand=aladdin","site":"https://www.aladdinthemusical.com/"},{"name":"MJ The Musical","theater":"Neil Simon Theatre","address":"250 West 52nd Street, New York, NY 10019","genre":"Musical","desc":"Os bastidores da turnê Dangerous de Michael Jackson, com coreografias impressionantes e dezenas de sucessos dele.","runtime":150,"age":"A partir de 8 anos","fit":"Pop e dança de altíssimo nível com sucessos que avós, pais e filha conhecem; quase não depende do inglês.","schedule":{"2027-01-02":["14:00","20:00"],"2027-01-03":["15:00"]},"scheduleNote":"","tickets":"https://www.ticketmaster.com/mj-ny-tickets/artist/2714992","site":"https://mjthemusical.com/"},{"name":"Harry Potter and the Cursed Child","theater":"Lyric Theatre","address":"214 West 43rd Street, New York, NY 10036","genre":"Peça","desc":"Peça, não musical, que continua a saga 19 anos depois, com Harry adulto e o filho Alvo, cheia de efeitos de magia ao vivo.","runtime":175,"age":"A partir de 8 anos","fit":"Efeitos de magia espetaculares, mas é peça falada e longa, o que pesa com pouco inglês.","schedule":{"2027-01-02":["14:00","20:00"],"2027-01-03":["15:00"]},"scheduleNote":"","tickets":"https://broadway.harrypottertheplay.com/ticket-information/","site":"https://broadway.harrypottertheplay.com/"},{"name":"Hamilton","theater":"Richard Rodgers Theatre","address":"226 West 46th Street, New York, NY 10036","genre":"Musical","desc":"A vida de Alexander Hamilton, um dos fundadores dos EUA, contada com hip-hop, R&B e pop.","runtime":165,"age":"A partir de 10 anos","fit":"Música ótima, mas as letras são rápidas e cheias de história americana, difíceis com pouco inglês.","schedule":{"2027-01-02":["13:00","19:00"],"2027-01-03":["13:00"]},"scheduleNote":"A sessão de sábado às 13:00 é a melhor opção; a de domingo bate com o almoço.","tickets":"https://hamiltonmusical.com/new-york/tickets","site":"https://hamiltonmusical.com/new-york/"},{"name":"Stranger Things: The First Shadow","theater":"Marquis Theatre","address":"1535 Broadway, New York, NY 10036","genre":"Peça","desc":"Peça, não musical, sobre a origem da série da Netflix, passada em Hawkins em 1959, com efeitos especiais impressionantes.","runtime":165,"age":"A partir de 12 anos","fit":"Espetacular para a Alice se ela conhece a série, mas tem sustos, é falada e pode cansar os avós. Último fim de semana em cartaz.","schedule":{"2027-01-02":["13:00","19:00"],"2027-01-03":["13:00","19:00"]},"scheduleNote":"Última apresentação na Broadway em 03/01.","tickets":"https://strangerthingsonstage.com/broadway/","site":"https://strangerthingsonstage.com/broadway/"},{"name":"Chicago","theater":"Ambassador Theatre","address":"219 West 49th Street, New York, NY 10019","genre":"Musical · para adultos","desc":"Musical clássico de jazz sobre assassinas que viram celebridades na Chicago dos anos 1920, com coreografia de Bob Fosse.","runtime":150,"age":"Pode ser inadequado para menores de 12 anos","fit":"Opção para os adultos: elegante e sensual, com temas de crime. Não é ideal para a Alice.","schedule":{"2027-01-02":["14:30","20:00"],"2027-01-03":["19:00"]},"scheduleNote":"","tickets":"https://chicagothemusical.com/","site":"https://chicagothemusical.com/"},{"name":"The Book of Mormon","theater":"Eugene O'Neill Theatre","address":"230 West 49th Street, New York, NY 10019","genre":"Musical · para adultos","desc":"Comédia musical dos criadores de South Park sobre dois jovens missionários mórmons enviados a Uganda.","runtime":150,"age":"Linguagem explícita e temas adultos","fit":"Muito engraçado para adultos, mas irreverente e pesado; não serve para a Alice e talvez não para os avós.","schedule":{"2027-01-02":["14:00","19:00"],"2027-01-03":["14:00","19:00"]},"scheduleNote":"","tickets":"https://bookofmormonbroadway.com/","site":"https://bookofmormonbroadway.com/"}],"sources":["https://www.broadway.com/broadway-guide/1/best-broadway-shows/","https://playbill.com/article/last-chance-schedule-of-upcoming-broadway-and-off-broadway-show-closings","https://www.newyorktheatreguide.com/theatre-news/news/broadway-shows-closing-soon","https://www.broadway.com/buzz/207421/juliet-to-close-on-broadway-after-four-years/","https://www.broadway.com/buzz/206490/stranger-things-the-first-shadow-to-close-on-broadway-in-january-2027/"]},"weather":{"note":"A previsão do tempo só sai cerca de 16 dias antes. Até lá, os números são a média real de 2015 a 2025 para estas datas, e o botão abre a previsão oficial mais recente de cada lugar.","source":"Médias: Open-Meteo (reanálise ERA5), 2015–2025, considerando 3 dias antes e depois de cada data. Previsão: NWS (serviço meteorológico dos EUA) e Windy.","places":[{"key":"houston","name":"Houston","short":"Houston","dates":["2026-12-29"],"hi":19,"lo":11,"rainPct":36,"snowPct":0,"coldest":-1,"warmest":29,"link":"https://forecast.weather.gov/MapClick.php?lat=29.76&lon=-95.37","wear":"Ameno, mas muda rápido: casaco leve e camadas para o dia de passeio. Pode chover."},{"key":"stpaul","name":"St. Paul e Minneapolis","short":"St. Paul","dates":["2026-12-29","2026-12-30","2026-12-31","2027-01-01"],"hi":-3,"lo":-11,"rainPct":30,"snowPct":16,"coldest":-29,"warmest":9,"link":"https://forecast.weather.gov/MapClick.php?lat=44.95&lon=-93.09","wear":"Frio intenso: casaco de inverno, roupa térmica, gorro, luvas, cachecol e botas antiderrapantes. Neve em cerca de 1 a cada 6 dias, e já houve −29 °C nessas datas. Cuidado redobrado com Ubirajara e Carlene no gelo."},{"key":"nyc","name":"Nova York","short":"Nova York","dates":["2027-01-01","2027-01-02","2027-01-03","2027-01-04"],"hi":5,"lo":-2,"rainPct":40,"snowPct":6,"coldest":-20,"warmest":18,"link":"https://forecast.weather.gov/MapClick.php?lat=40.71&lon=-74.01","wear":"Frio e vento: casaco grosso, gorro e luvas para andar entre o Gallaghers, o Eataly e a Broadway. Neve é rara, chuva fria é mais comum."},{"key":"nyc16","name":"Nova York (desembarque)","short":"Nova York","dates":["2027-01-16"],"hi":4,"lo":-3,"rainPct":34,"snowPct":13,"coldest":-13,"warmest":15,"link":"https://forecast.weather.gov/MapClick.php?lat=40.71&lon=-74.01","wear":"Frio na volta do Caribe: deixem casaco e gorro na bagagem de mão para o desembarque e o trajeto até Newark."},{"key":"puertoplata","name":"Puerto Plata","short":"Puerto Plata","dates":["2027-01-07"],"hi":27,"lo":22,"rainPct":38,"snowPct":0,"coldest":19,"warmest":30,"link":"https://www.windy.com/?19.79,-70.69,10","wear":"Ilha pequena: a média usa uma grade que mistura mar e terra, então em terra a máxima costuma ser 1 a 3 °C maior. Roupa leve, chapéu, protetor e uma capa de chuva compacta para pancadas rápidas."},{"key":"sanjuan","name":"San Juan","short":"San Juan","dates":["2027-01-08"],"hi":28,"lo":22,"rainPct":61,"snowPct":0,"coldest":19,"warmest":30,"link":"https://forecast.weather.gov/MapClick.php?lat=18.47&lon=-66.11","wear":"Calor com pancadas frequentes e rápidas: roupa leve, protetor e capa de chuva compacta. Calçado firme para os paralelepípedos molhados."},{"key":"basseterre","name":"Basseterre, St. Kitts","short":"St. Kitts","dates":["2027-01-09"],"hi":27,"lo":24,"rainPct":55,"snowPct":0,"coldest":22,"warmest":29,"link":"https://www.windy.com/?17.3,-62.72,10","wear":"Ilha pequena: a média usa uma grade que mistura mar e terra, então em terra a máxima costuma ser 1 a 3 °C maior. Roupa leve, protetor e capa de chuva compacta."},{"key":"tortola","name":"Road Town, Tortola","short":"Tortola","dates":["2027-01-10"],"hi":25,"lo":24,"rainPct":42,"snowPct":0,"coldest":20,"warmest":27,"link":"https://www.windy.com/?18.43,-64.62,10","wear":"Ilha pequena: a média usa uma grade que mistura mar e terra, então em terra a máxima costuma ser 1 a 3 °C maior. Roupa leve, protetor e capa de chuva compacta."},{"key":"philipsburg","name":"Philipsburg, St. Maarten","short":"St. Maarten","dates":["2027-01-11"],"hi":26,"lo":25,"rainPct":44,"snowPct":0,"coldest":23,"warmest":27,"link":"https://www.windy.com/?18.03,-63.05,10","wear":"Ilha pequena: a média usa uma grade que mistura mar e terra, então em terra a máxima costuma ser 1 a 3 °C maior. Sol forte no caminho até o centro: chapéu, protetor e água."},{"key":"stthomas","name":"St. Thomas","short":"St. Thomas","dates":["2027-01-12"],"hi":26,"lo":25,"rainPct":43,"snowPct":0,"coldest":23,"warmest":27,"link":"https://forecast.weather.gov/MapClick.php?lat=18.34&lon=-64.93","wear":"Ilha pequena: a média usa uma grade que mistura mar e terra, então em terra a máxima costuma ser 1 a 3 °C maior. Roupa leve, protetor e capa de chuva compacta."}],"forecast":{},"updated":""}}],"cur":"nycruise","updatedAt":0,"snapshotAt":"02/11/2026 14:06"}
